@@ -108,6 +108,14 @@
           <label class="form-label">อีเมล</label>
           <input id="c-email" class="form-input" type="email" placeholder="email@example.com" autocomplete="email">
         </div>
+        <div class="field-group">
+          <label class="form-label">ชื่อบริษัท / ร้าน (ถ้ามี)</label>
+          <input id="c-company" class="form-input" placeholder="ชื่อบริษัท หรือชื่อร้าน" autocomplete="organization">
+        </div>
+        <div class="field-group">
+          <label class="form-label">เลขประจำตัวผู้เสียภาษี (ถ้ามี)</label>
+          <input id="c-taxid" class="form-input" placeholder="เลข 13 หลัก" inputmode="numeric" maxlength="13">
+        </div>
         <div class="field-group" style="margin-bottom:0">
           <label class="form-label required">ที่อยู่สำหรับจัดส่งเครื่องคืน</label>
           <textarea id="c-address" class="form-input" rows="3"
@@ -312,6 +320,8 @@ function submitForm() {
     customerName   : document.getElementById('c-name').value.trim(),
     customerPhone  : document.getElementById('c-phone').value.trim(),
     customerEmail  : document.getElementById('c-email').value.trim(),
+    customerCompany: document.getElementById('c-company').value.trim(),
+    customerTaxId  : document.getElementById('c-taxid').value.trim(),
     customerAddress: document.getElementById('c-address').value.trim(),
     model,
     color          : document.getElementById('c-color').value === '__other__'
@@ -384,7 +394,7 @@ function shareCode() {
 }
 
 function resetForm() {
-  ['c-name','c-phone','c-email','c-address','c-model','c-color','c-symptoms','c-accessories']
+  ['c-name','c-phone','c-email','c-company','c-taxid','c-address','c-model','c-color','c-symptoms','c-accessories']
     .forEach(id => document.getElementById(id).value = '');
   document.getElementById('c-color-other').style.display = 'none';
   document.getElementById('c-color-other').value = '';

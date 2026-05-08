@@ -729,6 +729,8 @@ function previewImport() {
       <span class="text-gray-500">ชื่อลูกค้า</span><span class="font-medium">${escHtml(data.customerName||'-')}</span>
       <span class="text-gray-500">เบอร์โทร</span><span>${escHtml(data.customerPhone||'-')}</span>
       <span class="text-gray-500">อีเมล</span><span>${escHtml(data.customerEmail||'-')}</span>
+      ${data.customerCompany?`<span class="text-gray-500">บริษัท</span><span>${escHtml(data.customerCompany)}</span>`:''}
+      ${data.customerTaxId?`<span class="text-gray-500">เลขผู้เสียภาษี</span><span>${escHtml(data.customerTaxId)}</span>`:''}
       <span class="text-gray-500">รุ่นเครื่อง</span><span class="font-medium">${escHtml(data.model||'-')}</span>
       <span class="text-gray-500">สี</span><span>${escHtml(data.color||'-')}</span>
       <span class="text-gray-500">ส่งฟอร์มเมื่อ</span><span class="text-xs">${sub}</span>
@@ -753,6 +755,8 @@ function confirmImport() {
     document.getElementById('f-name').value        = data.customerName    || '';
     document.getElementById('f-phone').value       = data.customerPhone   || '';
     document.getElementById('f-email').value       = data.customerEmail   || '';
+    document.getElementById('f-company').value     = data.customerCompany || '';
+    document.getElementById('f-taxid').value       = data.customerTaxId   || '';
     document.getElementById('f-address').value     = data.customerAddress || '';
     document.getElementById('f-model').value       = data.model           || '';
     document.getElementById('f-color').value       = data.color           || '';
