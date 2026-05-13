@@ -344,7 +344,7 @@ function submitForm() {
     t: data.submittedAt.slice(0, 10)
   };
   const receiptCode = encode(receiptData);
-  const receiptUrl = 'https://tanuki0230-rgb.github.io/kitchenaid-system/receipt.html?r=' + encodeURIComponent(receiptCode);
+  const receiptUrl = 'https://Dr-Kitchenaid.github.io/kitchenaid-system/receipt.html?r=' + encodeURIComponent(receiptCode);
   document.getElementById('receipt-url-box').textContent = receiptUrl;
   const receiptBtn = document.getElementById('receipt-open-btn');
   receiptBtn.href = receiptUrl;
