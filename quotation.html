@@ -636,24 +636,24 @@ function selectPart(id){
 }
 
 // ---- Init ----
-renderList();
-
-// Pre-fill from repair job (sessionStorage)
-(function checkPrefill() {
+(async () => {
+  await DB.init();
+  renderList();
   const raw = sessionStorage.getItem('ka_prefill_qt');
-  if (!raw) return;
-  try {
-    const pre = JSON.parse(raw);
-    sessionStorage.removeItem('ka_prefill_qt');
-    showForm();
-    setTimeout(() => {
-      document.getElementById('f-name').value    = pre.customerName  || '';
-      document.getElementById('f-phone').value   = pre.customerPhone || '';
-      document.getElementById('f-address').value = pre.customerAddress || '';
-      const noteRef = pre.repairNumber ? `[อ้างอิงใบรับซ่อม ${pre.repairNumber}]\n${pre.machineInfo||''}` : (pre.machineInfo||'');
-      document.getElementById('f-notes').value = noteRef;
-    }, 50);
-  } catch(e) {}
+  if (raw) {
+    try {
+      const pre = JSON.parse(raw);
+      sessionStorage.removeItem('ka_prefill_qt');
+      showForm();
+      setTimeout(() => {
+        document.getElementById('f-name').value    = pre.customerName  || '';
+        document.getElementById('f-phone').value   = pre.customerPhone || '';
+        document.getElementById('f-address').value = pre.customerAddress || '';
+        const noteRef = pre.repairNumber ? `[อ้างอิงใบรับซ่อม ${pre.repairNumber}]\n${pre.machineInfo||''}` : (pre.machineInfo||'');
+        document.getElementById('f-notes').value = noteRef;
+      }, 50);
+    } catch(e) {}
+  }
 })();
 </script>
 </body>

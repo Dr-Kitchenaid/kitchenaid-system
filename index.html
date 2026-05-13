@@ -234,7 +234,7 @@
         </tr>`).join('');
     }
   }
-  init();
+  (async () => { await DB.init(); init(); })();
 </script>
 </body>
 </html>

@@ -450,23 +450,9 @@ function confirmAdj(){
   DB.updatePart(adjPartId,{stock:newStock});
   closeAdjModal();
   renderStock();
-  syncStock();
 }
 
-buildCatPills();
-renderStock();
-
-// ---- Stock Sync to Cloudflare Worker ----
-function syncStock() {
-  const url = localStorage.getItem('ka_worker_url');
-  const key = localStorage.getItem('ka_worker_key');
-  if (!url || !key) return;
-  fetch(url + '/stock', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-API-Key': key },
-    body: JSON.stringify({ parts: DB.getParts() }),
-  }).catch(() => {});
-}
+(async () => { await DB.init(); buildCatPills(); renderStock(); })();
 
 // ---- CSV Import ----
 let csvParsedRows = [];

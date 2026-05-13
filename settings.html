@@ -110,6 +110,26 @@
   </div>
 
   <div class="card mb-4">
+    <div class="card-header">☁️ Cloudflare Worker (ซิงค์ข้อมูล)</div>
+    <div class="p-5 space-y-4">
+      <p class="text-sm text-gray-500">เมื่อตั้งค่า Worker URL ข้อมูลจะซิงค์กับ Cloudflare KV — ใช้ได้จากทุก Browser / Device</p>
+      <div>
+        <label class="form-label">Worker URL</label>
+        <input id="s-worker-url" class="form-input" placeholder="https://kitchenaid-messenger.YOUR_NAME.workers.dev">
+      </div>
+      <div>
+        <label class="form-label">API Key</label>
+        <input id="s-api-key" class="form-input" placeholder="ka-secret-xxx" type="password">
+      </div>
+      <div id="worker-status" class="text-sm text-gray-400"></div>
+      <div class="flex flex-wrap gap-3">
+        <button class="btn btn-info btn-sm" onclick="testWorker()">🔗 ทดสอบการเชื่อมต่อ</button>
+        <button class="btn btn-primary btn-sm" onclick="migrateToWorker()">⬆️ โอนข้อมูลจากเครื่องนี้ไป Worker</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
     <div class="card-header">🗄️ จัดการข้อมูล</div>
     <div class="p-5 space-y-4">
       <div class="flex flex-wrap gap-3">
@@ -122,10 +142,10 @@
       <div class="border-t pt-4">
         <p class="text-sm text-gray-600 mb-3">⚠️ โซนอันตราย: ลบข้อมูลทั้งหมด</p>
         <div class="flex flex-wrap gap-2">
-          <button class="btn btn-danger btn-sm" onclick="clearData('ka_repairs','ใบรับซ่อม')">ลบใบรับซ่อมทั้งหมด</button>
-          <button class="btn btn-danger btn-sm" onclick="clearData('ka_quotations','ใบเสนอราคา')">ลบใบเสนอราคาทั้งหมด</button>
-          <button class="btn btn-danger btn-sm" onclick="clearData('ka_invoices','บิล')">ลบบิลทั้งหมด</button>
-          <button class="btn btn-danger btn-sm" onclick="clearData('ka_parts','อะไหล่')">ลบสต็อกอะไหล่ทั้งหมด</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('repairs','ใบรับซ่อม')">ลบใบรับซ่อมทั้งหมด</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('quotations','ใบเสนอราคา')">ลบใบเสนอราคาทั้งหมด</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('invoices','บิล')">ลบบิลทั้งหมด</button>
+          <button class="btn btn-danger btn-sm" onclick="clearData('parts','อะไหล่')">ลบสต็อกอะไหล่ทั้งหมด</button>
         </div>
       </div>
     </div>
@@ -139,7 +159,8 @@
 
 <script src="js/db.js"></script>
 <script>
-function loadSettings(){
+async function loadSettings(){
+  await DB.init();
   const s=DB.getSettings();
   document.getElementById('s-name').value=s.shopName||'';
   document.getElementById('s-address').value=s.address||'';
@@ -152,6 +173,10 @@ function loadSettings(){
     document.getElementById('logo-preview').src=s.shopLogo;
     document.getElementById('logo-preview-wrap').style.display='flex';
   }
+  document.getElementById('s-worker-url').value=localStorage.getItem('ka_worker_url')||'';
+  document.getElementById('s-api-key').value=localStorage.getItem('ka_api_key')||'';
+  const url=localStorage.getItem('ka_worker_url');
+  document.getElementById('worker-status').textContent=url?'🟢 Worker URL ตั้งค่าแล้ว':'⚪ ยังไม่ได้ตั้งค่า Worker';
 }
 
 function handleLogoUpload(e){
@@ -198,6 +223,12 @@ function saveSettings(){
     paymentInfo:document.getElementById('s-payment').value.trim(),
     shopLogo:current.shopLogo||'',
   });
+  // Save Worker config
+  const wUrl=(document.getElementById('s-worker-url').value.trim()).replace(/\/$/,'');
+  const wKey=document.getElementById('s-api-key').value.trim();
+  localStorage.setItem('ka_worker_url',wUrl);
+  localStorage.setItem('ka_api_key',wKey);
+  document.getElementById('worker-status').textContent=wUrl?'🟢 Worker URL ตั้งค่าแล้ว':'⚪ ยังไม่ได้ตั้งค่า Worker';
   const toast=document.getElementById('toast');
   toast.style.display='block';
   setTimeout(()=>toast.style.display='none',3000);
@@ -227,11 +258,12 @@ function importData(e){
     try{
       const data=JSON.parse(ev.target.result);
       if(!confirm('การ Import จะเขียนทับข้อมูลปัจจุบัน ยืนยัน?'))return;
-      if(data.settings)  DB.saveSettings(data.settings);
-      if(data.repairs)   localStorage.setItem('ka_repairs',JSON.stringify(data.repairs));
-      if(data.parts)     localStorage.setItem('ka_parts',JSON.stringify(data.parts));
-      if(data.quotations)localStorage.setItem('ka_quotations',JSON.stringify(data.quotations));
-      if(data.invoices)  localStorage.setItem('ka_invoices',JSON.stringify(data.invoices));
+      if(data.settings)   DB._store.settings   = data.settings;
+      if(data.repairs)    DB._store.repairs     = data.repairs;
+      if(data.parts)      DB._store.parts       = data.parts;
+      if(data.quotations) DB._store.quotations  = data.quotations;
+      if(data.invoices)   DB._store.invoices    = data.invoices;
+      DB._scheduleSync();
       loadSettings();
       alert('Import สำเร็จ');
     }catch(err){alert('ไฟล์ไม่ถูกต้อง: '+err.message);}
@@ -240,10 +272,60 @@ function importData(e){
   e.target.value='';
 }
 
-function clearData(key,label){
+function clearData(collection, label){
   if(!confirm(`ยืนยันการลบ${label}ทั้งหมด? ไม่สามารถกู้คืนได้`))return;
-  localStorage.removeItem(key);
+  DB._store[collection]=[];
+  DB._scheduleSync();
   alert(`ลบ${label}ทั้งหมดเรียบร้อย`);
+}
+
+async function testWorker(){
+  const url=(document.getElementById('s-worker-url').value.trim()).replace(/\/$/,'');
+  const key=document.getElementById('s-api-key').value.trim();
+  const st=document.getElementById('worker-status');
+  if(!url){st.textContent='❌ กรุณากรอก Worker URL';return;}
+  st.textContent='⏳ กำลังทดสอบ...';
+  try{
+    const r=await fetch(url+'/export',{headers:{'X-API-Key':key}});
+    if(r.ok){ st.textContent='✅ เชื่อมต่อสำเร็จ'; }
+    else { st.textContent=`❌ Error ${r.status}: ${r.statusText}`; }
+  }catch(err){ st.textContent='❌ เชื่อมต่อล้มเหลว: '+err.message; }
+}
+
+async function migrateToWorker(){
+  const url=(document.getElementById('s-worker-url').value.trim()).replace(/\/$/,'');
+  const key=document.getElementById('s-api-key').value.trim();
+  if(!url||!key){alert('กรุณากรอก Worker URL และ API Key ก่อน');return;}
+  // Collect sequences from old localStorage format
+  const sequences={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith('ka_seq_')){ sequences[k.replace('ka_seq_','')]=parseInt(localStorage.getItem(k))||0; }
+  }
+  const payload={
+    quotations: JSON.parse(localStorage.getItem('ka_quotations')||'[]'),
+    invoices:   JSON.parse(localStorage.getItem('ka_invoices')||'[]'),
+    repairs:    JSON.parse(localStorage.getItem('ka_repairs')||'[]'),
+    parts:      JSON.parse(localStorage.getItem('ka_parts')||'[]'),
+    settings:   DB._store.settings||JSON.parse(localStorage.getItem('ka_settings')||'{}'),
+    sequences,
+  };
+  const total=payload.quotations.length+payload.invoices.length+payload.repairs.length+payload.parts.length;
+  if(total===0&&Object.keys(sequences).length===0){alert('ไม่พบข้อมูลใน localStorage ที่จะโอน');return;}
+  if(!confirm(`พบข้อมูล ${total} รายการ (QT:${payload.quotations.length}, บิล:${payload.invoices.length}, ซ่อม:${payload.repairs.length}, อะไหล่:${payload.parts.length})\nต้องการโอนไปที่ Cloudflare Worker?`))return;
+  const st=document.getElementById('worker-status');
+  st.textContent='⏳ กำลังโอนข้อมูล...';
+  try{
+    const r=await fetch(url+'/import',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-API-Key':key},
+      body:JSON.stringify(payload),
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    st.textContent='✅ โอนข้อมูลสำเร็จ! กำลังรีโหลด...';
+    DB._initialized=false;
+    setTimeout(()=>location.reload(),1000);
+  }catch(err){ st.textContent='❌ โอนล้มเหลว: '+err.message; }
 }
 
 loadSettings();

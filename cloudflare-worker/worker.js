@@ -122,6 +122,40 @@ export default {
       return json(low);
     }
 
+    // GET /export — all business data
+    if (request.method === 'GET' && url.pathname === '/export') {
+      const [quotations, invoices, repairs, parts, settings, sequences] = await Promise.all([
+        env.KV.get('biz_quotations', 'json'),
+        env.KV.get('biz_invoices',   'json'),
+        env.KV.get('biz_repairs',    'json'),
+        env.KV.get('biz_parts',      'json'),
+        env.KV.get('biz_settings',   'json'),
+        env.KV.get('biz_sequences',  'json'),
+      ]);
+      return json({
+        quotations: quotations || [],
+        invoices:   invoices   || [],
+        repairs:    repairs    || [],
+        parts:      parts      || [],
+        settings:   settings   || {},
+        sequences:  sequences  || {},
+      });
+    }
+
+    // POST /import — save all business data
+    if (request.method === 'POST' && url.pathname === '/import') {
+      const body = await request.json().catch(() => ({}));
+      const ops = [];
+      if (body.quotations !== undefined) ops.push(env.KV.put('biz_quotations', JSON.stringify(body.quotations)));
+      if (body.invoices   !== undefined) ops.push(env.KV.put('biz_invoices',   JSON.stringify(body.invoices)));
+      if (body.repairs    !== undefined) ops.push(env.KV.put('biz_repairs',    JSON.stringify(body.repairs)));
+      if (body.parts      !== undefined) ops.push(env.KV.put('biz_parts',      JSON.stringify(body.parts)));
+      if (body.settings   !== undefined) ops.push(env.KV.put('biz_settings',   JSON.stringify(body.settings)));
+      if (body.sequences  !== undefined) ops.push(env.KV.put('biz_sequences',  JSON.stringify(body.sequences)));
+      await Promise.all(ops);
+      return json({ ok: true });
+    }
+
     return new Response('Not Found', { status: 404 });
   },
 };
