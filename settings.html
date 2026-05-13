@@ -115,11 +115,11 @@
       <p class="text-sm text-gray-500">เมื่อตั้งค่า Worker URL ข้อมูลจะซิงค์กับ Cloudflare KV — ใช้ได้จากทุก Browser / Device</p>
       <div>
         <label class="form-label">Worker URL</label>
-        <input id="s-worker-url" class="form-input" placeholder="https://kitchenaid-messenger.YOUR_NAME.workers.dev">
+        <input id="s-worker-url" class="form-input" placeholder="https://kitchenaid-messenger.YOUR_NAME.workers.dev" autocorrect="off" autocapitalize="off" spellcheck="false">
       </div>
       <div>
         <label class="form-label">API Key</label>
-        <input id="s-api-key" class="form-input" placeholder="ka-secret-xxx" type="password">
+        <input id="s-api-key" class="form-input" placeholder="ka-secret-xxx" type="password" autocorrect="off" autocapitalize="off" spellcheck="false">
       </div>
       <div id="worker-status" class="text-sm text-gray-400"></div>
       <div class="flex flex-wrap gap-3">
@@ -224,8 +224,8 @@ function saveSettings(){
     shopLogo:current.shopLogo||'',
   });
   // Save Worker config
-  const wUrl=(document.getElementById('s-worker-url').value.trim()).replace(/\/$/,'');
-  const wKey=document.getElementById('s-api-key').value.trim();
+  const wUrl=normalizeWorkerUrl(document.getElementById('s-worker-url').value);
+  const wKey=document.getElementById('s-api-key').value.trim().replace(/[^\x20-\x7E]/g,'');
   localStorage.setItem('ka_worker_url',wUrl);
   localStorage.setItem('ka_api_key',wKey);
   document.getElementById('worker-status').textContent=wUrl?'🟢 Worker URL ตั้งค่าแล้ว':'⚪ ยังไม่ได้ตั้งค่า Worker';
@@ -279,9 +279,14 @@ function clearData(collection, label){
   alert(`ลบ${label}ทั้งหมดเรียบร้อย`);
 }
 
+function normalizeWorkerUrl(raw){
+  let u=(raw||'').trim().replace(/\/$/,'');
+  if(u&&!u.startsWith('http'))u='https://'+u;
+  return u;
+}
 async function testWorker(){
-  const url=(document.getElementById('s-worker-url').value.trim()).replace(/\/$/,'');
-  const key=document.getElementById('s-api-key').value.trim();
+  const url=normalizeWorkerUrl(document.getElementById('s-worker-url').value);
+  const key=document.getElementById('s-api-key').value.trim().replace(/[^\x20-\x7E]/g,'');
   const st=document.getElementById('worker-status');
   if(!url){st.textContent='❌ กรุณากรอก Worker URL';return;}
   st.textContent='⏳ กำลังทดสอบ...';
@@ -293,8 +298,8 @@ async function testWorker(){
 }
 
 async function migrateToWorker(){
-  const url=(document.getElementById('s-worker-url').value.trim()).replace(/\/$/,'');
-  const key=document.getElementById('s-api-key').value.trim();
+  const url=normalizeWorkerUrl(document.getElementById('s-worker-url').value);
+  const key=document.getElementById('s-api-key').value.trim().replace(/[^\x20-\x7E]/g,'');
   if(!url||!key){alert('กรุณากรอก Worker URL และ API Key ก่อน');return;}
   // Collect sequences from old localStorage format
   const sequences={};
