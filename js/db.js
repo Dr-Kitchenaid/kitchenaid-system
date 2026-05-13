@@ -5,7 +5,11 @@ const DB = {
   _syncTimer: null,
   _initialized: false,
 
-  _workerUrl() { return (localStorage.getItem('ka_worker_url') || '').replace(/\/$/, ''); },
+  _workerUrl() {
+    let u = (localStorage.getItem('ka_worker_url') || '').trim().replace(/\/$/, '');
+    if (u && !u.startsWith('http')) u = 'https://' + u;
+    return u;
+  },
   _apiKey()    { return localStorage.getItem('ka_api_key') || ''; },
 
   async init() {
