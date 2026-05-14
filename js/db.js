@@ -36,6 +36,7 @@ const DB = {
             sequences:  data.sequences  || {},
           };
           this._loadedFromKV = true;
+          this._hideOfflineBanner();
           this.applyNavLogo();
           return;
         }
@@ -50,7 +51,34 @@ const DB = {
       settings:   JSON.parse(localStorage.getItem('ka_settings')  || '{}'),
       sequences:  {},
     };
+    this._showOfflineBanner();
     this.applyNavLogo();
+  },
+
+  _showOfflineBanner() {
+    if (typeof document === 'undefined') return;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this._showOfflineBanner());
+      return;
+    }
+    if (document.getElementById('ka-offline-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'ka-offline-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#fbbf24;color:#78350f;padding:10px 16px;text-align:center;font-size:14px;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,.15);font-family:-apple-system,Segoe UI,sans-serif;line-height:1.4;';
+    banner.innerHTML = 'OFFLINE MODE — โหลดข้อมูลจาก KV ไม่สำเร็จ ข้อมูลที่แก้ไขจะไม่ sync ขึ้นเซิร์ฟเวอร์ <button id="ka-retry-sync" type="button" style="margin-left:12px;padding:4px 12px;background:#78350f;color:#fff;border:0;border-radius:4px;cursor:pointer;font-weight:600;font-size:13px;">รีเฟรช</button>';
+    document.body.insertBefore(banner, document.body.firstChild);
+    document.body.style.paddingTop = banner.offsetHeight + 'px';
+    const btn = document.getElementById('ka-retry-sync');
+    if (btn) btn.addEventListener('click', () => location.reload());
+  },
+
+  _hideOfflineBanner() {
+    if (typeof document === 'undefined') return;
+    const banner = document.getElementById('ka-offline-banner');
+    if (banner) {
+      banner.remove();
+      document.body.style.paddingTop = '';
+    }
   },
 
   _scheduleSync() {
