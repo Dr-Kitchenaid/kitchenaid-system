@@ -10,6 +10,8 @@ const DB = {
   _loadedFromKV: false,
   _kvLastModified: 0,
   _conflictPromptOpen: false,
+  _retryTimer: null,
+  _retryIntervalMs: 30000,
 
   _workerUrl() {
     let u = (localStorage.getItem('ka_worker_url') || DEFAULT_WORKER_URL).trim().replace(/\/$/, '');
@@ -21,29 +23,11 @@ const DB = {
   async init() {
     if (this._initialized) return;
     this._initialized = true;
-    const url = this._workerUrl();
-    if (url) {
-      try {
-        const r = await fetch(url + '/export', {
-          headers: { 'X-API-Key': this._apiKey() },
-        });
-        if (r.ok) {
-          const data = await r.json();
-          this._store = {
-            quotations: data.quotations || [],
-            invoices:   data.invoices   || [],
-            repairs:    data.repairs    || [],
-            parts:      data.parts      || [],
-            settings:   data.settings   || {},
-            sequences:  data.sequences  || {},
-          };
-          this._kvLastModified = Number(data.lastModified) || 0;
-          this._loadedFromKV = true;
-          this._hideOfflineBanner();
-          this.applyNavLogo();
-          return;
-        }
-      } catch (_) {}
+    const ok = await this._attemptKVLoad();
+    if (ok) {
+      this._hideOfflineBanner();
+      this.applyNavLogo();
+      return;
     }
     // Fallback: load from localStorage
     this._store = {
@@ -56,6 +40,60 @@ const DB = {
     };
     this._showOfflineBanner();
     this.applyNavLogo();
+    this._startRetryReconnect();
+  },
+
+  async _attemptKVLoad() {
+    const url = this._workerUrl();
+    if (!url) return false;
+    try {
+      const r = await fetch(url + '/export', {
+        headers: { 'X-API-Key': this._apiKey() },
+      });
+      if (r.ok) {
+        const data = await r.json();
+        this._store = {
+          quotations: data.quotations || [],
+          invoices:   data.invoices   || [],
+          repairs:    data.repairs    || [],
+          parts:      data.parts      || [],
+          settings:   data.settings   || {},
+          sequences:  data.sequences  || {},
+        };
+        this._kvLastModified = Number(data.lastModified) || 0;
+        this._loadedFromKV = true;
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  },
+
+  _startRetryReconnect() {
+    if (this._retryTimer) return;
+    this._retryTimer = setInterval(async () => {
+      if (this._loadedFromKV) {
+        clearInterval(this._retryTimer);
+        this._retryTimer = null;
+        return;
+      }
+      const ok = await this._attemptKVLoad();
+      if (ok) {
+        clearInterval(this._retryTimer);
+        this._retryTimer = null;
+        this._showReconnectedBanner();
+      }
+    }, this._retryIntervalMs);
+  },
+
+  _showReconnectedBanner() {
+    if (typeof document === 'undefined') return;
+    const banner = document.getElementById('ka-offline-banner');
+    if (!banner) return;
+    banner.style.background = '#bbf7d0';
+    banner.style.color = '#14532d';
+    banner.innerHTML = '✅ เชื่อมต่อ KV กลับมาแล้ว — กดเพื่อโหลดข้อมูลใหม่ <button id="ka-retry-sync" type="button" style="margin-left:12px;padding:4px 12px;background:#14532d;color:#fff;border:0;border-radius:4px;cursor:pointer;font-weight:600;font-size:13px;">โหลดข้อมูลใหม่</button>';
+    const btn = document.getElementById('ka-retry-sync');
+    if (btn) btn.addEventListener('click', () => location.reload());
   },
 
   _showOfflineBanner() {
@@ -87,6 +125,12 @@ const DB = {
   _scheduleSync() {
     clearTimeout(this._syncTimer);
     this._syncTimer = setTimeout(() => this._doSync(), 800);
+  },
+
+  async forceSync() {
+    clearTimeout(this._syncTimer);
+    this._syncTimer = null;
+    await this._doSync();
   },
 
   async _doSync() {

@@ -124,6 +124,8 @@
       <div id="worker-status" class="text-sm text-gray-400"></div>
       <div class="flex flex-wrap gap-3">
         <button class="btn btn-info btn-sm" onclick="testWorker()">🔗 ทดสอบการเชื่อมต่อ</button>
+        <button class="btn btn-success btn-sm" onclick="forceSyncNow()">🔄 ซิงค์ทันที</button>
+        <button class="btn btn-secondary btn-sm" onclick="reloadFromKV()">⬇️ โหลดข้อมูลใหม่จาก KV</button>
         <button class="btn btn-primary btn-sm" onclick="migrateToWorker()">⬆️ โอนข้อมูลจากเครื่องนี้ไป Worker</button>
       </div>
     </div>
@@ -295,6 +297,27 @@ async function testWorker(){
     if(r.ok){ st.textContent='✅ เชื่อมต่อสำเร็จ'; }
     else { st.textContent=`❌ Error ${r.status}: ${r.statusText}`; }
   }catch(err){ st.textContent='❌ เชื่อมต่อล้มเหลว: '+err.message; }
+}
+
+async function forceSyncNow(){
+  const st=document.getElementById('worker-status');
+  if(!DB._loadedFromKV){ st.textContent='❌ ยังไม่ได้โหลดจาก KV — sync ไม่ได้'; return; }
+  st.textContent='⏳ กำลังซิงค์ pending changes...';
+  try{
+    await DB.forceSync();
+    st.textContent='✅ ซิงค์เรียบร้อย (lastModified='+DB._kvLastModified+')';
+  }catch(err){ st.textContent='❌ ซิงค์ล้มเหลว: '+err.message; }
+}
+
+async function reloadFromKV(){
+  if(!confirm('โหลดข้อมูลใหม่จาก KV จะทับข้อมูลที่ยังไม่ได้ sync ในเครื่องนี้ ยืนยัน?'))return;
+  const st=document.getElementById('worker-status');
+  st.textContent='⏳ กำลังโหลด...';
+  DB._initialized=false;
+  DB._loadedFromKV=false;
+  const ok=await DB._attemptKVLoad();
+  if(ok){ st.textContent='✅ โหลดสำเร็จ — กำลังรีโหลดหน้า...'; setTimeout(()=>location.reload(),800); }
+  else { st.textContent='❌ โหลดล้มเหลว — ตรวจ Worker URL/Key'; }
 }
 
 async function migrateToWorker(){
