@@ -8,6 +8,8 @@ const DB = {
   _syncTimer: null,
   _initialized: false,
   _loadedFromKV: false,
+  _kvLastModified: 0,
+  _conflictPromptOpen: false,
 
   _workerUrl() {
     let u = (localStorage.getItem('ka_worker_url') || DEFAULT_WORKER_URL).trim().replace(/\/$/, '');
@@ -35,6 +37,7 @@ const DB = {
             settings:   data.settings   || {},
             sequences:  data.sequences  || {},
           };
+          this._kvLastModified = Number(data.lastModified) || 0;
           this._loadedFromKV = true;
           this._hideOfflineBanner();
           this.applyNavLogo();
@@ -92,15 +95,60 @@ const DB = {
       console.warn('[DB] Skip sync: not loaded from KV yet (refusing to overwrite remote data)');
       return;
     }
+    if (this._conflictPromptOpen) {
+      console.warn('[DB] Skip sync: conflict prompt already open');
+      return;
+    }
     const url = this._workerUrl();
     if (!url) return;
     try {
-      await fetch(url + '/import', {
+      const r = await fetch(url + '/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-API-Key': this._apiKey() },
-        body: JSON.stringify(this._store),
+        body: JSON.stringify({ ...this._store, _lastModified: this._kvLastModified }),
       });
+      if (r.status === 409) {
+        const conflict = await r.json().catch(() => ({}));
+        await this._handleConflict(conflict);
+        return;
+      }
+      if (r.ok) {
+        const result = await r.json().catch(() => ({}));
+        if (result.lastModified) this._kvLastModified = Number(result.lastModified);
+      }
     } catch (_) {}
+  },
+
+  async _handleConflict(conflict) {
+    this._conflictPromptOpen = true;
+    try {
+      const serverTime = conflict.serverLastModified
+        ? new Date(conflict.serverLastModified).toLocaleString('th-TH')
+        : '-';
+      const msg =
+        'พบข้อมูลใหม่กว่าบนเซิร์ฟเวอร์ (อาจมีคนแก้ไขจากเครื่องอื่น)\n\n' +
+        `เวลาแก้ไขล่าสุดบนเซิร์ฟเวอร์: ${serverTime}\n\n` +
+        'OK = ทับด้วยข้อมูลในเครื่องนี้ (ข้อมูลใหม่จากเครื่องอื่นจะหาย)\n' +
+        'Cancel = โหลดข้อมูลใหม่จากเซิร์ฟเวอร์ (การแก้ไขล่าสุดในเครื่องนี้จะหาย)';
+      const overwrite = confirm(msg);
+      if (overwrite) {
+        this._kvLastModified = Number(conflict.serverLastModified) || Date.now();
+        await this._doSync();
+      } else if (conflict.currentData) {
+        this._store = {
+          quotations: conflict.currentData.quotations || [],
+          invoices:   conflict.currentData.invoices   || [],
+          repairs:    conflict.currentData.repairs    || [],
+          parts:      conflict.currentData.parts      || [],
+          settings:   conflict.currentData.settings   || {},
+          sequences:  conflict.currentData.sequences  || {},
+        };
+        this._kvLastModified = Number(conflict.serverLastModified) || 0;
+        location.reload();
+      }
+    } finally {
+      this._conflictPromptOpen = false;
+    }
   },
 
   uid() {

@@ -124,27 +124,63 @@ export default {
 
     // GET /export — all business data
     if (request.method === 'GET' && url.pathname === '/export') {
-      const [quotations, invoices, repairs, parts, settings, sequences] = await Promise.all([
-        env.KV.get('biz_quotations', 'json'),
-        env.KV.get('biz_invoices',   'json'),
-        env.KV.get('biz_repairs',    'json'),
-        env.KV.get('biz_parts',      'json'),
-        env.KV.get('biz_settings',   'json'),
-        env.KV.get('biz_sequences',  'json'),
+      const [quotations, invoices, repairs, parts, settings, sequences, lastModified] = await Promise.all([
+        env.KV.get('biz_quotations',   'json'),
+        env.KV.get('biz_invoices',     'json'),
+        env.KV.get('biz_repairs',      'json'),
+        env.KV.get('biz_parts',        'json'),
+        env.KV.get('biz_settings',     'json'),
+        env.KV.get('biz_sequences',    'json'),
+        env.KV.get('biz_lastModified'),
       ]);
       return json({
-        quotations: quotations || [],
-        invoices:   invoices   || [],
-        repairs:    repairs    || [],
-        parts:      parts      || [],
-        settings:   settings   || {},
-        sequences:  sequences  || {},
+        quotations:   quotations || [],
+        invoices:     invoices   || [],
+        repairs:      repairs    || [],
+        parts:        parts      || [],
+        settings:     settings   || {},
+        sequences:    sequences  || {},
+        lastModified: lastModified ? Number(lastModified) : 0,
       });
     }
 
     // POST /import — save all business data
+    // Optional conflict detection: client may send `_lastModified` (timestamp from previous /export).
+    // If KV has been updated since then, return 409 with current server state instead of overwriting.
     if (request.method === 'POST' && url.pathname === '/import') {
       const body = await request.json().catch(() => ({}));
+      const clientLastModified = body._lastModified;
+
+      if (clientLastModified !== undefined) {
+        const serverLastModifiedRaw = await env.KV.get('biz_lastModified');
+        const serverLastModified = serverLastModifiedRaw ? Number(serverLastModifiedRaw) : 0;
+        if (serverLastModified > Number(clientLastModified)) {
+          const [quotations, invoices, repairs, parts, settings, sequences] = await Promise.all([
+            env.KV.get('biz_quotations', 'json'),
+            env.KV.get('biz_invoices',   'json'),
+            env.KV.get('biz_repairs',    'json'),
+            env.KV.get('biz_parts',      'json'),
+            env.KV.get('biz_settings',   'json'),
+            env.KV.get('biz_sequences',  'json'),
+          ]);
+          return json({
+            ok: false,
+            conflict: true,
+            serverLastModified,
+            clientLastModified: Number(clientLastModified),
+            currentData: {
+              quotations: quotations || [],
+              invoices:   invoices   || [],
+              repairs:    repairs    || [],
+              parts:      parts      || [],
+              settings:   settings   || {},
+              sequences:  sequences  || {},
+            },
+          }, 409);
+        }
+      }
+
+      const newLastModified = Date.now();
       const ops = [];
       if (body.quotations !== undefined) ops.push(env.KV.put('biz_quotations', JSON.stringify(body.quotations)));
       if (body.invoices   !== undefined) ops.push(env.KV.put('biz_invoices',   JSON.stringify(body.invoices)));
@@ -152,8 +188,9 @@ export default {
       if (body.parts      !== undefined) ops.push(env.KV.put('biz_parts',      JSON.stringify(body.parts)));
       if (body.settings   !== undefined) ops.push(env.KV.put('biz_settings',   JSON.stringify(body.settings)));
       if (body.sequences  !== undefined) ops.push(env.KV.put('biz_sequences',  JSON.stringify(body.sequences)));
+      ops.push(env.KV.put('biz_lastModified', String(newLastModified)));
       await Promise.all(ops);
-      return json({ ok: true });
+      return json({ ok: true, lastModified: newLastModified });
     }
 
     return new Response('Not Found', { status: 404 });
