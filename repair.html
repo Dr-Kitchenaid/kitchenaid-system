@@ -578,6 +578,9 @@ function makePrefillData(r) {
     repairNumber   : r.number,
     customerName   : r.customerName,
     customerPhone  : r.customerPhone,
+    customerEmail  : r.customerEmail   || '',
+    customerCompany: r.customerCompany || '',
+    customerTaxId  : r.customerTaxId   || '',
     customerAddress: r.customerAddress || '',
     machineInfo,
   };

@@ -119,6 +119,18 @@
             <input id="f-phone" class="form-input" placeholder="08x-xxx-xxxx" type="tel">
           </div>
           <div>
+            <label class="form-label">อีเมล</label>
+            <input id="f-email" class="form-input" placeholder="email@example.com" type="email">
+          </div>
+          <div>
+            <label class="form-label">ชื่อบริษัท</label>
+            <input id="f-company" class="form-input" placeholder="ชื่อบริษัท (ถ้ามี)">
+          </div>
+          <div>
+            <label class="form-label">เลขประจำตัวผู้เสียภาษี</label>
+            <input id="f-taxid" class="form-input" placeholder="เลข 13 หลัก (ถ้ามี)">
+          </div>
+          <div>
             <label class="form-label">ที่อยู่</label>
             <textarea id="f-address" class="form-input" rows="3" placeholder="ที่อยู่สำหรับจัดส่ง / ออกบิล"></textarea>
           </div>
@@ -314,6 +326,9 @@ function showForm(id=null){
     document.getElementById('form-number').textContent=q.number;
     document.getElementById('f-name').value=q.customerName||'';
     document.getElementById('f-phone').value=q.customerPhone||'';
+    document.getElementById('f-email').value=q.customerEmail||'';
+    document.getElementById('f-company').value=q.customerCompany||'';
+    document.getElementById('f-taxid').value=q.customerTaxId||'';
     document.getElementById('f-address').value=q.customerAddress||'';
     document.getElementById('f-date').value=q.date||today();
     document.getElementById('f-valid').value=q.validUntil||addDays(today(),30);
@@ -329,6 +344,9 @@ function showForm(id=null){
     document.getElementById('form-number').textContent='';
     document.getElementById('f-name').value='';
     document.getElementById('f-phone').value='';
+    document.getElementById('f-email').value='';
+    document.getElementById('f-company').value='';
+    document.getElementById('f-taxid').value='';
     document.getElementById('f-address').value='';
     document.getElementById('f-date').value=today();
     document.getElementById('f-valid').value=addDays(today(),30);
@@ -418,6 +436,9 @@ function saveDoc(statusOverride){
   const data={
     customerName:name,
     customerPhone:document.getElementById('f-phone').value.trim(),
+    customerEmail:document.getElementById('f-email').value.trim(),
+    customerCompany:document.getElementById('f-company').value.trim(),
+    customerTaxId:document.getElementById('f-taxid').value.trim(),
     customerAddress:document.getElementById('f-address').value.trim(),
     date:document.getElementById('f-date').value,
     validUntil:document.getElementById('f-valid').value,
@@ -463,6 +484,9 @@ function convertToInvoice(id){
     number:DB.nextNum('IV'),
     customerName:q.customerName,
     customerPhone:q.customerPhone,
+    customerEmail:q.customerEmail||'',
+    customerCompany:q.customerCompany||'',
+    customerTaxId:q.customerTaxId||'',
     customerAddress:q.customerAddress,
     date:today(),
     dueDate:addDays(today(),30),
@@ -549,7 +573,10 @@ function buildPrintHtml(q){
     <div class="cust-box">
       <label>ลูกค้า / Customer</label>
       <p><strong>${q.customerName||'-'}</strong></p>
+      ${q.customerCompany?`<p>${q.customerCompany}</p>`:''}
       ${q.customerPhone?`<p>โทร. ${q.customerPhone}</p>`:''}
+      ${q.customerEmail?`<p>อีเมล: ${q.customerEmail}</p>`:''}
+      ${q.customerTaxId?`<p>เลขประจำตัวผู้เสียภาษี: ${q.customerTaxId}</p>`:''}
       ${q.customerAddress?`<p style="white-space:pre-line">${q.customerAddress}</p>`:''}
     </div>
     <table class="items">
@@ -648,6 +675,9 @@ function selectPart(id){
       setTimeout(() => {
         document.getElementById('f-name').value    = pre.customerName  || '';
         document.getElementById('f-phone').value   = pre.customerPhone || '';
+        document.getElementById('f-email').value   = pre.customerEmail  || '';
+        document.getElementById('f-company').value = pre.customerCompany || '';
+        document.getElementById('f-taxid').value   = pre.customerTaxId  || '';
         document.getElementById('f-address').value = pre.customerAddress || '';
         const noteRef = pre.repairNumber ? `[อ้างอิงใบรับซ่อม ${pre.repairNumber}]\n${pre.machineInfo||''}` : (pre.machineInfo||'');
         document.getElementById('f-notes').value = noteRef;
