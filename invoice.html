@@ -518,7 +518,6 @@ function buildPrintHtml(inv){
       <td>${it.description||''}</td>
       <td>${it.code||''}</td>
       <td style="text-align:center">${it.qty}</td>
-      <td style="text-align:center">${it.unit||'ชิ้น'}</td>
       <td style="text-align:right">${fmt(it.price)}</td>
       <td style="text-align:center">${it.discPct||0}%</td>
       <td style="text-align:right">${fmt(it.amount!=null?it.amount:((it.qty||0)*(it.price||0)*(1-(it.discPct||0)/100)))}</td>
@@ -563,15 +562,13 @@ function buildPrintHtml(inv){
         </div>
       </div>
       <div>
-        <div class="doc-type">ใบเสร็จรับเงิน / Receipt</div>
+        <div class="doc-type">บิลเงินสด / Cash Receipt</div>
         <div class="doc-num">
           เลขที่: <strong>${inv.number}</strong><br>
-          วันที่: ${inv.date?new Date(inv.date).toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}):'-'}<br>
-          ครบกำหนด: ${inv.dueDate?new Date(inv.dueDate).toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}):'-'}
+          วันที่: ${inv.date?new Date(inv.date).toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'}):'-'}
         </div>
       </div>
     </div>
-    ${inv.status==='paid'?`<div class="paid-stamp">✓ ชำระแล้ว ${inv.paidAt?new Date(inv.paidAt).toLocaleDateString('th-TH'):''} — ${payMethodLbl[inv.paymentMethod]||inv.paymentMethod||''}</div>`:''}
     <div class="cust-box">
       <label>ลูกค้า / Customer</label>
       <p><strong>${inv.customerName||'-'}</strong></p>
@@ -583,7 +580,6 @@ function buildPrintHtml(inv){
         <th style="width:32px;text-align:center">#</th>
         <th>รายการ</th><th style="width:90px">รหัส</th>
         <th style="width:50px;text-align:center">จำนวน</th>
-        <th style="width:40px;text-align:center">หน่วย</th>
         <th style="width:90px;text-align:right">ราคา/หน่วย</th>
         <th style="width:55px;text-align:center">ส่วนลด%</th>
         <th style="width:100px;text-align:right">จำนวนเงิน</th>
@@ -598,6 +594,11 @@ function buildPrintHtml(inv){
       <tr class="grand"><td>ยอดรวมทั้งสิ้น</td><td>฿ ${fmt(inv.total)}</td></tr>
     </table></div>
     ${inv.notes?`<div class="notes">หมายเหตุ: ${inv.notes}</div>`:''}
+    <div class="notes" style="margin-top:8px">
+      เงื่อนไขการรับประกัน:<br>
+      1. รับประกันเฉพาะ "อะไหล่ที่เปลี่ยนกับทางร้านเท่านั้น" ภายใน 7 วันเท่านั้น<br>
+      2. ไม่รับประกันเรื่องเสียงทุกกรณี
+    </div>
     ${s.paymentInfo?`<div class="notes" style="margin-top:8px">ข้อมูลการชำระเงิน: ${s.paymentInfo}</div>`:''}
     <div class="footer">
       <div><div class="sig-line">ลายเซ็นลูกค้า<br>(......................................................)</div></div>
