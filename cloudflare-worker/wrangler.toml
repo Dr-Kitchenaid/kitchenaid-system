@@ -6,3 +6,10 @@ compatibility_flags = ["nodejs_compat"]
 [[kv_namespaces]]
 binding = "KV"
 id = "c42efb53574547cb9ba304a8c765acaf"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "ka-parts-images"
+
+[vars]
+R2_PUBLIC_URL = "https://pub-62e12e9a5db847ec9545428f870b2022.r2.dev"

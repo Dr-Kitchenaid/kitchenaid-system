@@ -107,6 +107,29 @@ export default {
       return json({ ok: true });
     }
 
+    // POST /image?partId=xxx&ext=jpg  body=binary  → upload to R2, return {key, url}
+    if (request.method === 'POST' && url.pathname === '/image') {
+      const partId = (url.searchParams.get('partId') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
+      if (!partId) return json({ error: 'missing partId' }, 400);
+      const ext = (url.searchParams.get('ext') || 'jpg').replace(/[^a-z0-9]/gi, '').slice(0, 5) || 'jpg';
+      const buf = await request.arrayBuffer();
+      if (buf.byteLength === 0) return json({ error: 'empty body' }, 400);
+      if (buf.byteLength > 2 * 1024 * 1024) return json({ error: 'too large (max 2MB)' }, 400);
+      const uuid = crypto.randomUUID();
+      const key = `parts/${partId}/${uuid}.${ext}`;
+      const contentType = request.headers.get('Content-Type') || 'image/jpeg';
+      await env.IMAGES.put(key, buf, { httpMetadata: { contentType } });
+      return json({ ok: true, key, url: `${env.R2_PUBLIC_URL}/${key}` });
+    }
+
+    // DELETE /image?key=parts/xxx/yyy.jpg
+    if (request.method === 'DELETE' && url.pathname === '/image') {
+      const key = url.searchParams.get('key') || '';
+      if (!key.startsWith('parts/')) return json({ error: 'invalid key' }, 400);
+      await env.IMAGES.delete(key);
+      return json({ ok: true });
+    }
+
     // POST /stock  { parts: [...] }  — browser syncs stock snapshot to KV
     if (request.method === 'POST' && url.pathname === '/stock') {
       const { parts } = await request.json().catch(() => ({}));
