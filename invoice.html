@@ -17,6 +17,7 @@
       </a>
       <div class="hidden md:flex gap-1">
         <a href="index.html"      class="nav-link">🏠 แดชบอร์ด</a>
+        <a href="customer-history.html" class="nav-link">👥 ประวัติลูกค้า</a>
         <a href="repair.html"     class="nav-link">🔧 รับเครื่องซ่อม</a>
         <a href="quotation.html"  class="nav-link">📄 ใบเสนอราคา</a>
         <a href="invoice.html"    class="nav-link active">🧾 บิล</a>
@@ -28,6 +29,7 @@
     </div>
     <div id="mnav" class="hidden md:hidden border-t border-red-600 py-2">
       <a href="index.html"     class="block py-2 px-3 rounded hover:bg-red-600 mb-1">🏠 แดชบอร์ด</a>
+      <a href="customer-history.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1">👥 ประวัติลูกค้า</a>
       <a href="repair.html"    class="block py-2 px-3 rounded hover:bg-red-600 mb-1">🔧 รับเครื่องซ่อม</a>
       <a href="quotation.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1">📄 ใบเสนอราคา</a>
       <a href="invoice.html"   class="block py-2 px-3 rounded hover:bg-red-600 mb-1">🧾 บิล</a>
@@ -105,15 +107,21 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
       <div class="card">
-        <div class="card-header">👤 ข้อมูลลูกค้า</div>
+        <div class="card-header flex items-center justify-between">
+          <span>👤 ข้อมูลลูกค้า</span>
+          <a id="view-history-link" href="#" target="_blank" class="text-xs text-blue-600 hover:underline" style="display:none">ดูประวัติเต็ม →</a>
+        </div>
         <div class="p-4 space-y-3">
+          <datalist id="dl-customer-phone"></datalist>
+          <datalist id="dl-customer-name"></datalist>
           <div>
             <label class="form-label">ชื่อลูกค้า <span class="text-red-500">*</span></label>
-            <input id="f-name" class="form-input" placeholder="ชื่อ-นามสกุล / บริษัท">
+            <input id="f-name" class="form-input" placeholder="ชื่อ-นามสกุล / บริษัท" list="dl-customer-name" oninput="onCustNameInput()">
           </div>
           <div>
-            <label class="form-label">เบอร์โทรศัพท์</label>
-            <input id="f-phone" class="form-input" placeholder="08x-xxx-xxxx" type="tel">
+            <label class="form-label">เบอร์โทรศัพท์ <span class="text-xs text-gray-400 font-normal">(พิมพ์เพื่อค้นจากประวัติ)</span></label>
+            <input id="f-phone" class="form-input" placeholder="08x-xxx-xxxx" type="tel" list="dl-customer-phone" oninput="onCustPhoneInput()">
+            <p id="cust-match-hint" class="text-xs text-green-600 mt-1" style="display:none"></p>
           </div>
           <div>
             <label class="form-label">อีเมล</label>
@@ -348,11 +356,96 @@ function showList(){
   renderList();
 }
 
+// ---- Customer autocomplete from past records ----
+function normPhone(p) { return String(p||'').replace(/[^\d]/g,''); }
+
+function buildCustomerIndex() {
+  const all = [...DB.getRepairs(), ...DB.getQuotations(), ...DB.getInvoices()];
+  const map = new Map();
+  for (const r of all) {
+    const key = normPhone(r.customerPhone);
+    if (!key) continue;
+    const ts = r.updatedAt || r.createdAt || '';
+    const prev = map.get(key);
+    if (!prev || ts > prev._ts) {
+      map.set(key, {
+        _ts: ts,
+        phone: r.customerPhone || '',
+        phoneKey: key,
+        name: r.customerName || (prev && prev.name) || '',
+        email: r.customerEmail || (prev && prev.email) || '',
+        company: r.customerCompany || (prev && prev.company) || '',
+        taxId: r.customerTaxId || (prev && prev.taxId) || '',
+        address: r.customerAddress || (prev && prev.address) || '',
+      });
+    } else {
+      if (!prev.name    && r.customerName)    prev.name    = r.customerName;
+      if (!prev.email   && r.customerEmail)   prev.email   = r.customerEmail;
+      if (!prev.company && r.customerCompany) prev.company = r.customerCompany;
+      if (!prev.taxId   && r.customerTaxId)   prev.taxId   = r.customerTaxId;
+      if (!prev.address && r.customerAddress) prev.address = r.customerAddress;
+    }
+  }
+  return [...map.values()];
+}
+
+let _custIndex = [];
+
+function populateCustomerDatalists() {
+  _custIndex = buildCustomerIndex();
+  const dlPhone = document.getElementById('dl-customer-phone');
+  const dlName  = document.getElementById('dl-customer-name');
+  dlPhone.innerHTML = _custIndex.filter(c=>c.phone)
+    .map(c => `<option value="${c.phone}">${(c.name||'').replace(/"/g,'&quot;')}</option>`).join('');
+  const seen = new Set();
+  dlName.innerHTML = _custIndex.filter(c => c.name && !seen.has(c.name) && seen.add(c.name))
+    .map(c => `<option value="${c.name.replace(/"/g,'&quot;')}">${c.phone||''}</option>`).join('');
+}
+
+function _fillCustomerFields(c, showHint) {
+  if (!c) return;
+  const fields = [['f-name',c.name],['f-email',c.email],['f-company',c.company],['f-taxid',c.taxId],['f-address',c.address]];
+  for (const [id,val] of fields) {
+    const el = document.getElementById(id);
+    if (el && !el.value && val) el.value = val;
+  }
+  const hint = document.getElementById('cust-match-hint');
+  const link = document.getElementById('view-history-link');
+  if (showHint && hint) { hint.textContent = `✓ พบประวัติลูกค้า: ${c.name||'-'}`; hint.style.display=''; }
+  if (link && c.phone) { link.href = 'customer-history.html?phone=' + encodeURIComponent(c.phone); link.style.display=''; }
+}
+function _clearMatchHint() {
+  const hint = document.getElementById('cust-match-hint');
+  const link = document.getElementById('view-history-link');
+  if (hint) hint.style.display='none';
+  if (link) link.style.display='none';
+}
+function onCustPhoneInput() {
+  const v = document.getElementById('f-phone').value;
+  const key = normPhone(v);
+  if (!key || key.length < 4) { _clearMatchHint(); return; }
+  const c = _custIndex.find(x => x.phoneKey === key);
+  if (c) _fillCustomerFields(c, true); else _clearMatchHint();
+}
+function onCustNameInput() {
+  const v = (document.getElementById('f-name').value||'').trim();
+  if (!v) { _clearMatchHint(); return; }
+  const matches = _custIndex.filter(x => x.name === v);
+  if (matches.length === 1) {
+    const c = matches[0];
+    const phoneEl = document.getElementById('f-phone');
+    if (phoneEl && !phoneEl.value && c.phone) phoneEl.value = c.phone;
+    _fillCustomerFields(c, true);
+  } else { _clearMatchHint(); }
+}
+
 // ---- Form ----
 function showForm(id=null){
   editingId=id; currentItems=[];
   document.getElementById('list-view').style.display='none';
   document.getElementById('form-view').style.display='';
+  populateCustomerDatalists();
+  _clearMatchHint();
   const s=DB.getSettings();
   document.getElementById('t-vatrate').textContent=s.vatRate||7;
 
@@ -367,6 +460,10 @@ function showForm(id=null){
     document.getElementById('f-company').value=inv.customerCompany||'';
     document.getElementById('f-taxid').value=inv.customerTaxId||'';
     document.getElementById('f-address').value=inv.customerAddress||'';
+    if (inv.customerPhone) {
+      const link = document.getElementById('view-history-link');
+      if (link) { link.href = 'customer-history.html?phone=' + encodeURIComponent(inv.customerPhone); link.style.display=''; }
+    }
     document.getElementById('f-date').value=inv.date||today();
     document.getElementById('f-due').value=inv.dueDate||addDays(today(),30);
     document.getElementById('f-status').value=inv.status||'unpaid';
@@ -734,6 +831,8 @@ function selectPart(id){ const p=DB.getParts().find(x=>x.id===id); if(!p)return;
 (async () => {
   await DB.init();
   renderList();
+  const urlId = new URLSearchParams(location.search).get('id');
+  if (urlId) { showForm(urlId); return; }
   const raw = sessionStorage.getItem('ka_prefill_inv');
   if (raw) {
     try {

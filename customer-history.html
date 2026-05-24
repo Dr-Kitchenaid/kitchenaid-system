@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ประวัติลูกค้า - KitchenAid</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<nav class="bg-red-700 text-white shadow-lg no-print sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-14">
+      <a href="index.html" class="flex items-center gap-2 font-bold text-lg text-white no-underline">
+        <span id="nav-icon" class="text-2xl">🍳</span><img id="nav-logo" style="height:32px;display:none;border-radius:4px;object-fit:contain" alt="logo"><span>KitchenAid</span>
+      </a>
+      <div class="hidden md:flex gap-1">
+        <a href="index.html"             class="nav-link">🏠 แดชบอร์ด</a>
+        <a href="customer-history.html"  class="nav-link active">👥 ประวัติลูกค้า</a>
+        <a href="repair.html"            class="nav-link">🔧 รับเครื่องซ่อม</a>
+        <a href="quotation.html"         class="nav-link">📄 ใบเสนอราคา</a>
+        <a href="invoice.html"           class="nav-link">🧾 บิล</a>
+        <a href="stock.html"             class="nav-link">📦 สต็อก</a>
+        <a href="inbox.html"             class="nav-link">💬 Inbox</a>
+        <a href="settings.html"          class="nav-link">⚙️ ตั้งค่า</a>
+      </div>
+      <button onclick="document.getElementById('mnav').classList.toggle('hidden')" class="md:hidden p-2 rounded hover:bg-red-600">☰</button>
+    </div>
+    <div id="mnav" class="hidden md:hidden border-t border-red-600 py-2">
+      <a href="index.html"            class="block py-2 px-3 rounded hover:bg-red-600 mb-1">🏠 แดชบอร์ด</a>
+      <a href="customer-history.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1">👥 ประวัติลูกค้า</a>
+      <a href="repair.html"           class="block py-2 px-3 rounded hover:bg-red-600 mb-1">🔧 รับเครื่องซ่อม</a>
+      <a href="quotation.html"        class="block py-2 px-3 rounded hover:bg-red-600 mb-1">📄 ใบเสนอราคา</a>
+      <a href="invoice.html"          class="block py-2 px-3 rounded hover:bg-red-600 mb-1">🧾 บิล</a>
+      <a href="stock.html"            class="block py-2 px-3 rounded hover:bg-red-600 mb-1">📦 สต็อก</a>
+      <a href="inbox.html"            class="block py-2 px-3 rounded hover:bg-red-600 mb-1">💬 Inbox</a>
+      <a href="settings.html"         class="block py-2 px-3 rounded hover:bg-red-600">⚙️ ตั้งค่า</a>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+
+  <!-- ========== LIST VIEW ========== -->
+  <div id="list-view">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900">👥 ประวัติลูกค้า</h1>
+        <p class="text-sm text-gray-500 mt-0.5">รวมข้อมูลและรายการของลูกค้า (จัดกลุ่มตามเบอร์โทร)</p>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="p-4">
+        <input id="search" class="form-input" style="max-width:360px" placeholder="🔍 ค้นหาเบอร์โทร / ชื่อ / อีเมล..." oninput="renderList()">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>เบอร์โทร</th>
+              <th>ชื่อ</th>
+              <th>อีเมล</th>
+              <th>ผู้เสียภาษี</th>
+              <th class="text-right">ใบเสนอราคา</th>
+              <th class="text-right">ใบซ่อม</th>
+              <th class="text-right">บิล</th>
+              <th class="text-right">ยอดรวม (฿)</th>
+              <th class="text-center">ดู</th>
+            </tr>
+          </thead>
+          <tbody id="cust-list">
+            <tr><td colspan="9" class="text-center text-gray-400 py-8">ยังไม่มีข้อมูลลูกค้า</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== DETAIL VIEW ========== -->
+  <div id="detail-view" style="display:none">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div>
+        <button class="btn btn-secondary" onclick="showList()">← กลับรายการ</button>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="p-5">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900" id="d-name">-</h2>
+            <p class="text-sm text-gray-500 mt-1" id="d-company"></p>
+          </div>
+          <div class="text-right text-sm" id="d-summary"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 text-sm">
+          <div>
+            <div class="text-gray-500 text-xs mb-1">เบอร์โทร</div>
+            <div class="font-mono font-semibold" id="d-phone">-</div>
+          </div>
+          <div>
+            <div class="text-gray-500 text-xs mb-1">อีเมล</div>
+            <div id="d-email">-</div>
+          </div>
+          <div>
+            <div class="text-gray-500 text-xs mb-1">เลขประจำตัวผู้เสียภาษี</div>
+            <div class="font-mono" id="d-taxid">-</div>
+          </div>
+          <div>
+            <div class="text-gray-500 text-xs mb-1">ที่อยู่</div>
+            <div id="d-address" style="white-space:pre-line">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quotations -->
+    <div class="card mb-4">
+      <div class="card-header">📄 ใบเสนอราคา (<span id="d-qt-count">0</span>)</div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>เลขที่</th><th>วันที่</th><th class="text-right">ยอดรวม</th><th>สถานะ</th><th class="text-center">เปิด</th></tr>
+          </thead>
+          <tbody id="d-qt-rows"><tr><td colspan="5" class="text-center text-gray-400 py-6">ไม่มี</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Repairs -->
+    <div class="card mb-4">
+      <div class="card-header">🔧 ใบรับซ่อม (<span id="d-rp-count">0</span>)</div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>เลขที่</th><th>วันที่</th><th>รุ่น</th><th>อาการ</th><th>สถานะ</th><th class="text-center">เปิด</th></tr>
+          </thead>
+          <tbody id="d-rp-rows"><tr><td colspan="6" class="text-center text-gray-400 py-6">ไม่มี</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Invoices -->
+    <div class="card mb-4">
+      <div class="card-header">🧾 บิล (<span id="d-inv-count">0</span>)</div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>เลขที่</th><th>วันที่</th><th class="text-right">ยอดรวม</th><th>สถานะ</th><th class="text-center">เปิด</th></tr>
+          </thead>
+          <tbody id="d-inv-rows"><tr><td colspan="5" class="text-center text-gray-400 py-6">ไม่มี</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="js/db.js"></script>
+<script>
+  const fmt = (n, d=2) => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+  const qtStatus  = {draft:'badge-draft',sent:'badge-sent',approved:'badge-approved',rejected:'badge-rejected',converted:'badge-converted'};
+  const invStatus = {unpaid:'badge-unpaid',paid:'badge-paid',overdue:'badge-overdue'};
+  const qtLabel   = {draft:'ร่าง',sent:'ส่งแล้ว',approved:'อนุมัติ',rejected:'ปฏิเสธ',converted:'แปลงเป็นบิล'};
+  const invLabel  = {unpaid:'ค้างชำระ',paid:'ชำระแล้ว',overdue:'เกินกำหนด'};
+
+  function qtBadge(s)  { return `<span class="badge ${qtStatus[s]||'badge-draft'}">${qtLabel[s]||s||'-'}</span>`; }
+  function invBadge(s) { return `<span class="badge ${invStatus[s]||'badge-unpaid'}">${invLabel[s]||s||'-'}</span>`; }
+  function rpBadge(s)  { return `<span class="badge badge-draft">${s||'-'}</span>`; }
+
+  function normPhone(p) {
+    return String(p||'').replace(/[^\d]/g,'');
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '-';
+    try { return new Date(iso).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}); }
+    catch(_) { return iso; }
+  }
+
+  // Group records by normalized phone
+  function buildCustomers() {
+    const all = [
+      ...DB.getQuotations().map(x => ({...x, _type:'qt'})),
+      ...DB.getInvoices().map(x   => ({...x, _type:'inv'})),
+      ...DB.getRepairs().map(x    => ({...x, _type:'rp'})),
+    ];
+    const map = new Map();
+    for (const r of all) {
+      const key = normPhone(r.customerPhone);
+      if (!key) continue;
+      if (!map.has(key)) {
+        map.set(key, {
+          phone: r.customerPhone, phoneKey: key,
+          name: r.customerName||'',
+          email: r.customerEmail||'',
+          company: r.customerCompany||'',
+          taxId: r.customerTaxId||'',
+          address: r.customerAddress||'',
+          latest: r.createdAt||'',
+          qtCount:0, rpCount:0, invCount:0, invTotal:0,
+        });
+      }
+      const c = map.get(key);
+      // Keep most-recently-updated field if blank
+      const ts = r.updatedAt || r.createdAt || '';
+      if (ts > (c.latest||'')) {
+        c.latest = ts;
+        if (r.customerName)    c.name    = r.customerName;
+        if (r.customerEmail)   c.email   = r.customerEmail;
+        if (r.customerCompany) c.company = r.customerCompany;
+        if (r.customerTaxId)   c.taxId   = r.customerTaxId;
+        if (r.customerAddress) c.address = r.customerAddress;
+      } else {
+        if (!c.name    && r.customerName)    c.name    = r.customerName;
+        if (!c.email   && r.customerEmail)   c.email   = r.customerEmail;
+        if (!c.company && r.customerCompany) c.company = r.customerCompany;
+        if (!c.taxId   && r.customerTaxId)   c.taxId   = r.customerTaxId;
+        if (!c.address && r.customerAddress) c.address = r.customerAddress;
+      }
+      if (r._type==='qt')  c.qtCount++;
+      if (r._type==='rp')  c.rpCount++;
+      if (r._type==='inv') { c.invCount++; c.invTotal += Number(r.total||0); }
+    }
+    return [...map.values()].sort((a,b) => (b.latest||'').localeCompare(a.latest||''));
+  }
+
+  function renderList() {
+    const q = (document.getElementById('search').value||'').toLowerCase().trim();
+    let list = buildCustomers();
+    if (q) {
+      const qDigits = q.replace(/[^\d]/g,'');
+      list = list.filter(c =>
+        (c.name||'').toLowerCase().includes(q) ||
+        (c.email||'').toLowerCase().includes(q) ||
+        (qDigits && c.phoneKey.includes(qDigits))
+      );
+    }
+    const body = document.getElementById('cust-list');
+    if (list.length === 0) {
+      body.innerHTML = '<tr><td colspan="9" class="text-center text-gray-400 py-8">ไม่พบลูกค้า</td></tr>';
+      return;
+    }
+    body.innerHTML = list.map(c => `
+      <tr class="cursor-pointer hover:bg-gray-50" onclick="showDetail('${c.phoneKey}')">
+        <td class="font-mono text-sm">${c.phone||'-'}</td>
+        <td class="text-sm font-medium">${c.name||'-'}</td>
+        <td class="text-sm text-gray-500">${c.email||'-'}</td>
+        <td class="text-sm font-mono text-gray-500">${c.taxId||'-'}</td>
+        <td class="text-right text-sm">${c.qtCount}</td>
+        <td class="text-right text-sm">${c.rpCount}</td>
+        <td class="text-right text-sm">${c.invCount}</td>
+        <td class="text-right text-sm font-semibold">${fmt(c.invTotal)}</td>
+        <td class="text-center"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();showDetail('${c.phoneKey}')">เปิด</button></td>
+      </tr>`).join('');
+  }
+
+  function showList() {
+    document.getElementById('list-view').style.display = '';
+    document.getElementById('detail-view').style.display = 'none';
+    history.replaceState(null,'','customer-history.html');
+    renderList();
+  }
+
+  function showDetail(phoneKey) {
+    const customers = buildCustomers();
+    const c = customers.find(x => x.phoneKey === phoneKey);
+    if (!c) { alert('ไม่พบลูกค้านี้'); return; }
+
+    document.getElementById('list-view').style.display   = 'none';
+    document.getElementById('detail-view').style.display = '';
+    history.replaceState(null,'','customer-history.html?phone='+encodeURIComponent(c.phone||phoneKey));
+
+    document.getElementById('d-name').textContent    = c.name || '(ไม่ระบุชื่อ)';
+    document.getElementById('d-company').textContent = c.company || '';
+    document.getElementById('d-phone').textContent   = c.phone || '-';
+    document.getElementById('d-email').textContent   = c.email || '-';
+    document.getElementById('d-taxid').textContent   = c.taxId || '-';
+    document.getElementById('d-address').textContent = c.address || '-';
+    document.getElementById('d-summary').innerHTML   =
+      `<div class="text-gray-500 text-xs">ยอดบิลรวม</div>` +
+      `<div class="text-xl font-bold text-green-600">฿${fmt(c.invTotal)}</div>`;
+
+    const quotes  = DB.getQuotations().filter(x => normPhone(x.customerPhone) === phoneKey)
+                      .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+    const repairs = DB.getRepairs().filter(x => normPhone(x.customerPhone) === phoneKey)
+                      .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+    const invs    = DB.getInvoices().filter(x => normPhone(x.customerPhone) === phoneKey)
+                      .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+
+    document.getElementById('d-qt-count').textContent  = quotes.length;
+    document.getElementById('d-rp-count').textContent  = repairs.length;
+    document.getElementById('d-inv-count').textContent = invs.length;
+
+    document.getElementById('d-qt-rows').innerHTML = quotes.length === 0
+      ? '<tr><td colspan="5" class="text-center text-gray-400 py-6">ไม่มี</td></tr>'
+      : quotes.map(q => `
+          <tr>
+            <td class="font-mono text-sm text-blue-600">${q.number||'-'}</td>
+            <td class="text-sm">${fmtDate(q.createdAt)}</td>
+            <td class="text-right text-sm">฿${fmt(q.total)}</td>
+            <td>${qtBadge(q.status)}</td>
+            <td class="text-center"><a class="btn btn-sm btn-secondary" href="quotation.html?id=${encodeURIComponent(q.id)}">เปิด</a></td>
+          </tr>`).join('');
+
+    document.getElementById('d-rp-rows').innerHTML = repairs.length === 0
+      ? '<tr><td colspan="6" class="text-center text-gray-400 py-6">ไม่มี</td></tr>'
+      : repairs.map(r => `
+          <tr>
+            <td class="font-mono text-sm text-blue-600">${r.number||'-'}</td>
+            <td class="text-sm">${fmtDate(r.createdAt)}</td>
+            <td class="text-sm">${r.model||'-'}</td>
+            <td class="text-sm text-gray-500">${(r.symptoms||r.problem||'').slice(0,40)}</td>
+            <td>${rpBadge(r.status)}</td>
+            <td class="text-center"><a class="btn btn-sm btn-secondary" href="repair.html?id=${encodeURIComponent(r.id)}">เปิด</a></td>
+          </tr>`).join('');
+
+    document.getElementById('d-inv-rows').innerHTML = invs.length === 0
+      ? '<tr><td colspan="5" class="text-center text-gray-400 py-6">ไม่มี</td></tr>'
+      : invs.map(i => `
+          <tr>
+            <td class="font-mono text-sm text-blue-600">${i.number||'-'}</td>
+            <td class="text-sm">${fmtDate(i.createdAt)}</td>
+            <td class="text-right text-sm">฿${fmt(i.total)}</td>
+            <td>${invBadge(i.status)}</td>
+            <td class="text-center"><a class="btn btn-sm btn-secondary" href="invoice.html?id=${encodeURIComponent(i.id)}">เปิด</a></td>
+          </tr>`).join('');
+  }
+
+  (async () => {
+    await DB.init();
+    renderList();
+    const params = new URLSearchParams(location.search);
+    const phone = params.get('phone');
+    if (phone) {
+      const key = normPhone(phone);
+      if (key) showDetail(key);
+    }
+  })();
+</script>
+</body>
+</html>
