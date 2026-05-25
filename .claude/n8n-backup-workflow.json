@@ -1,0 +1,68 @@
+{
+  "name": "KitchenAid KV Backup (Daily 02:00)",
+  "nodes": [
+    {
+      "id": "schedule-1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-export",
+      "name": "Fetch /export",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "https://kitchenaid-messenger.dr-kicthenaid.workers.dev/export",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "ka-secret-999" }
+          ]
+        },
+        "options": {
+          "timeout": 60000,
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      }
+    },
+    {
+      "id": "code-upload",
+      "name": "Upload to TrueNAS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const https = require('https');\nconst data = $('Fetch /export').first().json;\nconst jsonStr = JSON.stringify(data);\nconst fileBytes = Buffer.from(jsonStr, 'utf8');\n\nconst now = new Date();\nconst pad = n => String(n).padStart(2, '0');\nconst ts = now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());\nconst basePath = '/mnt/House48_NAS/Kitchenaid-Web/backup-data';\nconst dstPath = basePath + '/ka-data-' + ts + '.json';\nconst latestPath = basePath + '/ka-data-latest.json';\n\nasync function uploadOne(targetPath) {\n  const boundary = 'Boundary' + Date.now() + Math.random().toString(36).slice(2);\n  const dataJson = JSON.stringify({ method: 'filesystem.put', params: [targetPath] });\n  const CRLF = '\\r\\n';\n  const pre = Buffer.from(\n    '--' + boundary + CRLF +\n    'Content-Disposition: form-data; name=\"data\"' + CRLF + CRLF +\n    dataJson + CRLF +\n    '--' + boundary + CRLF +\n    'Content-Disposition: form-data; name=\"file\"; filename=\"backup.json\"' + CRLF +\n    'Content-Type: application/json' + CRLF + CRLF,\n    'utf8'\n  );\n  const post = Buffer.from(CRLF + '--' + boundary + '--' + CRLF, 'utf8');\n  const body = Buffer.concat([pre, fileBytes, post]);\n  const auth = Buffer.from('truenas_admin:023023As').toString('base64');\n  return new Promise((resolve, reject) => {\n    const req = https.request({\n      hostname: '192.168.1.143',\n      port: 443,\n      path: '/_upload',\n      method: 'POST',\n      rejectUnauthorized: false,\n      headers: {\n        'Authorization': 'Basic ' + auth,\n        'Content-Type': 'multipart/form-data; boundary=' + boundary,\n        'Content-Length': body.length\n      }\n    }, (res) => {\n      const chunks = [];\n      res.on('data', c => chunks.push(c));\n      res.on('end', () => {\n        const respStr = Buffer.concat(chunks).toString('utf8');\n        if (res.statusCode >= 200 && res.statusCode < 300) resolve(respStr);\n        else reject(new Error('HTTP ' + res.statusCode + ': ' + respStr));\n      });\n    });\n    req.on('error', reject);\n    req.write(body);\n    req.end();\n  });\n}\n\nconst r1 = await uploadOne(dstPath);\nconst r2 = await uploadOne(latestPath);\nreturn [{ json: { ok: true, ts, dstPath, latestPath, sizeBytes: fileBytes.length, timestamped: r1, latest: r2 } }];\n"
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [ { "node": "Fetch /export", "type": "main", "index": 0 } ]
+      ]
+    },
+    "Fetch /export": {
+      "main": [
+        [ { "node": "Upload to TrueNAS", "type": "main", "index": 0 } ]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null
+}
