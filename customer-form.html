@@ -67,10 +67,229 @@
   </style>
 </head>
 <body class="min-h-screen">
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <!-- KA Onigiri Theme — line-art icons, stroke=currentColor, viewBox 24x24 -->
+
+  <symbol id="i-mixer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 4h10l1 5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4z"/>
+    <path d="M9 13v3"/>
+    <path d="M14 13v3"/>
+    <rect x="6" y="16" width="11" height="4" rx="1.2"/>
+    <circle cx="11.5" cy="8" r="0.8" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 11l9-7 9 7"/>
+    <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/>
+  </symbol>
+
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="8" r="3.2"/>
+    <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+    <circle cx="17" cy="9" r="2.4"/>
+    <path d="M16 14c2.8 0 5 2.2 5 5"/>
+  </symbol>
+
+  <symbol id="i-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15.5 3.5a4.5 4.5 0 0 0-5.7 5.7L3 16l4 4 6.8-6.8a4.5 4.5 0 0 0 5.7-5.7L17 6l-2-2-2 2z"/>
+  </symbol>
+
+  <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+    <path d="M14 3v4h4"/>
+    <path d="M8 12h8"/>
+    <path d="M8 16h8"/>
+    <path d="M8 8h3"/>
+  </symbol>
+
+  <symbol id="i-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 3h14v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L5 21z"/>
+    <path d="M8 8h8"/>
+    <path d="M8 12h8"/>
+    <path d="M8 16h5"/>
+  </symbol>
+
+  <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 7l9-4 9 4-9 4z"/>
+    <path d="M3 7v10l9 4 9-4V7"/>
+    <path d="M12 11v10"/>
+  </symbol>
+
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>
+    <circle cx="9" cy="11" r="0.9" fill="currentColor"/>
+    <circle cx="12" cy="11" r="0.9" fill="currentColor"/>
+    <circle cx="15" cy="11" r="0.9" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M12 2v3M12 19v3M22 12h-3M5 12H2M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05L4.93 4.93"/>
+  </symbol>
+
+  <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20h4l11-11-4-4L4 16z"/>
+    <path d="M14 6l4 4"/>
+  </symbol>
+
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 7h16"/>
+    <path d="M10 4h4a1 1 0 0 1 1 1v2H9V5a1 1 0 0 1 1-1z"/>
+    <path d="M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12"/>
+    <path d="M10 11v6M14 11v6"/>
+  </symbol>
+
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 5v14M5 12h14"/>
+  </symbol>
+
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="6"/>
+    <path d="M16 16l4 4"/>
+  </symbol>
+
+  <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="6" y="4" width="12" height="17" rx="1.5"/>
+    <path d="M9 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2H9z"/>
+    <path d="M9 11h6M9 15h6M9 18h4"/>
+  </symbol>
+
+  <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="8"/>
+    <path d="M12 7v10"/>
+    <path d="M15 9.5c0-1.4-1.3-2-3-2s-3 .6-3 2 1.3 2 3 2 3 .6 3 2-1.3 2-3 2-3-.6-3-2"/>
+  </symbol>
+
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20V4"/>
+    <path d="M4 20h16"/>
+    <path d="M7 17v-5M11 17V9M15 17v-3M19 17V7"/>
+  </symbol>
+
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12l5 5L20 7"/>
+  </symbol>
+
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 6l12 12M18 6L6 18"/>
+  </symbol>
+
+  <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3l10 18H2z"/>
+    <path d="M12 10v5"/>
+    <circle cx="12" cy="18" r="0.8" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 11v6"/>
+    <circle cx="12" cy="7.5" r="0.9" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="16" rx="1.5"/>
+    <path d="M3 10h18"/>
+    <path d="M8 3v4M16 3v4"/>
+  </symbol>
+
+  <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 6 6L15 14l5 2v3a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z"/>
+  </symbol>
+
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="14" rx="1.5"/>
+    <path d="M3 7l9 7 9-7"/>
+  </symbol>
+
+  <symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 11V4a1 1 0 0 1 1-1h7l10 10-8 8z"/>
+    <circle cx="7.5" cy="7.5" r="1.2"/>
+  </symbol>
+
+  <symbol id="i-shop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 8l1-4h14l1 4"/>
+    <path d="M4 8v12a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8"/>
+    <path d="M4 8c0 2 1.5 3 3 3s3-1 3-3 1.5 3 3 3 3-1 3-3 1.5 3 3 3"/>
+    <path d="M9 21v-6h6v6"/>
+  </symbol>
+
+  <symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 3h11l3 3v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+    <path d="M7 3v6h9V3"/>
+    <rect x="7" y="13" width="10" height="8" rx="0.5"/>
+  </symbol>
+
+  <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>
+  </symbol>
+
+  <symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 9V4h10v5"/>
+    <rect x="4" y="9" width="16" height="8" rx="1"/>
+    <rect x="7" y="14" width="10" height="6" rx="0.5"/>
+    <circle cx="17" cy="12" r="0.8" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 4v12"/>
+    <path d="M7 11l5 5 5-5"/>
+    <path d="M5 20h14"/>
+  </symbol>
+
+  <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 20V8"/>
+    <path d="M7 13l5-5 5 5"/>
+    <path d="M5 4h14"/>
+  </symbol>
+
+  <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 18a4 4 0 0 1-1-7.9A6 6 0 0 1 18 11a3.5 3.5 0 0 1 0 7z"/>
+  </symbol>
+
+  <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 1 0-5.66-5.66l-1.5 1.5"/>
+    <path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 1 0 5.66 5.66l1.5-1.5"/>
+  </symbol>
+
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 12a8 8 0 0 1 14-5"/>
+    <path d="M18 4v4h-4"/>
+    <path d="M20 12a8 8 0 0 1-14 5"/>
+    <path d="M6 20v-4h4"/>
+  </symbol>
+
+  <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="8" ry="2.5"/>
+    <path d="M4 5v6c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5V5"/>
+    <path d="M4 11v6c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5v-6"/>
+  </symbol>
+
+  <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+    <circle cx="8.5" cy="9.5" r="1.5"/>
+    <path d="M21 16l-5-5-9 9"/>
+  </symbol>
+
+  <symbol id="i-mobile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="7" y="2" width="10" height="20" rx="2"/>
+    <path d="M10 18h4"/>
+  </symbol>
+
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.5"/>
+    <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>
+  </symbol>
+
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 7h16M4 12h16M4 17h16"/>
+  </symbol>
+</svg>
+
+
 
   <!-- Header -->
   <div class="bg-red-700 text-white px-4 py-5 text-center">
-    <div class="text-3xl mb-1">🍳</div>
+    <div class="text-3xl mb-1"><svg class="ic"><use href="#i-mixer"/></svg></div>
     <h1 class="text-xl font-bold">KitchenAid Service Center</h1>
     <p class="text-sm opacity-80 mt-1">แบบฟอร์มแจ้งส่งซ่อมเครื่อง</p>
   </div>
@@ -94,7 +313,7 @@
     <!-- ===== STEP 1: Personal Info ===== -->
     <div id="step1" class="fade-in">
       <div class="card mb-4">
-        <h2 class="font-bold text-gray-900 mb-4 text-lg">👤 ข้อมูลของคุณ</h2>
+        <h2 class="font-bold text-gray-900 mb-4 text-lg"><svg class="ic"><use href="#i-user"/></svg> ข้อมูลของคุณ</h2>
 
         <div class="field-group">
           <label class="form-label required">ชื่อ-นามสกุล</label>
@@ -128,7 +347,7 @@
     <!-- ===== STEP 2: Machine Info ===== -->
     <div id="step2" style="display:none" class="fade-in">
       <div class="card mb-4">
-        <h2 class="font-bold text-gray-900 mb-4 text-lg">🍳 ข้อมูลเครื่อง</h2>
+        <h2 class="font-bold text-gray-900 mb-4 text-lg"><svg class="ic"><use href="#i-mixer"/></svg> ข้อมูลเครื่อง</h2>
 
         <div class="field-group">
           <label class="form-label required">รุ่นเครื่อง</label>
@@ -192,13 +411,13 @@
 
       <!-- Summary preview -->
       <div class="card mb-4 bg-gray-50" id="summary-preview" style="display:none">
-        <h3 class="font-semibold text-gray-700 mb-3 text-sm">📋 ตรวจสอบข้อมูลก่อนส่ง</h3>
+        <h3 class="font-semibold text-gray-700 mb-3 text-sm"><svg class="ic"><use href="#i-clipboard"/></svg> ตรวจสอบข้อมูลก่อนส่ง</h3>
         <div id="summary-content" class="text-sm text-gray-600 space-y-1"></div>
       </div>
 
       <div class="flex gap-3">
         <button class="btn-outline" style="width:auto;padding:12px 20px" onclick="goStep1()">← ย้อนกลับ</button>
-        <button class="btn-main" style="flex:1" onclick="submitForm()">📤 ส่งข้อมูล</button>
+        <button class="btn-main" style="flex:1" onclick="submitForm()"><svg class="ic"><use href="#i-up"/></svg> ส่งข้อมูล</button>
       </div>
     </div>
 
@@ -215,13 +434,13 @@
         <p class="text-xs text-gray-500 mb-3">โปรดส่งรหัสนี้ให้ทางร้านผ่าน LINE / WhatsApp เพื่อให้ทางร้านเปิดงานซ่อม</p>
         <div class="code-box mb-3" id="result-code">–</div>
         <button class="btn-main mb-2" onclick="copyCode()">
-          <span id="copy-icon">📋</span> <span id="copy-label">คัดลอกรหัส</span>
+          <span id="copy-icon"><svg class="ic"><use href="#i-clipboard"/></svg></span> <span id="copy-label">คัดลอกรหัส</span>
         </button>
         <button class="btn-outline" onclick="shareCode()">📱 แชร์ผ่านแอป</button>
       </div>
 
       <div class="card mb-4 bg-blue-50 border border-blue-200">
-        <h3 class="font-semibold text-blue-800 mb-2 text-sm">📦 ขั้นตอนต่อไป</h3>
+        <h3 class="font-semibold text-blue-800 mb-2 text-sm"><svg class="ic"><use href="#i-box"/></svg> ขั้นตอนต่อไป</h3>
         <ol class="text-sm text-blue-700 space-y-2 pl-4" style="list-style:decimal">
           <li>ส่ง<strong>รหัสงานซ่อม</strong>ข้างบนให้ทางร้านผ่าน LINE/Facebook</li>
           <li><button onclick="showShippingModal()" class="underline font-semibold text-blue-800 text-left">ดูที่อยู่และวิธีการจัดส่ง →</button></li>
@@ -232,19 +451,19 @@
 
       <div class="card bg-amber-50 border border-amber-200 mb-4">
         <p class="text-sm text-amber-800">
-          ⚠️ <strong>คำแนะนำการส่ง:</strong> กรุณาอ่านวิธีแพ็คเครื่อง หรือ<button onclick="showPackingModal()" class="underline font-semibold text-amber-900">ดูวิธีการแพ็คในลิงก์</button> เพื่อป้องกันความเสียหายระหว่างขนส่ง
+          <svg class="ic"><use href="#i-warn"/></svg>️ <strong>คำแนะนำการส่ง:</strong> กรุณาอ่านวิธีแพ็คเครื่อง หรือ<button onclick="showPackingModal()" class="underline font-semibold text-amber-900">ดูวิธีการแพ็คในลิงก์</button> เพื่อป้องกันความเสียหายระหว่างขนส่ง
         </p>
       </div>
 
       <div class="card mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">📄 ใบรับซ่อม</h3>
+        <h3 class="font-bold text-gray-800 mb-2"><svg class="ic"><use href="#i-doc"/></svg> ใบรับซ่อม</h3>
         <p class="text-xs text-gray-500 mb-3">คัดลอกลิงก์นี้เพื่อดูหรือแชร์ใบรับซ่อมของคุณ</p>
         <div class="code-box mb-3" id="receipt-url-box" style="font-size:0.65rem;word-break:break-all;line-height:1.7">–</div>
         <div class="flex gap-2 mb-2">
           <button class="btn-main" style="flex:1" onclick="copyReceiptUrl()">
-            <span id="rcopy-icon">📋</span> <span id="rcopy-label">คัดลอกลิงก์</span>
+            <span id="rcopy-icon"><svg class="ic"><use href="#i-clipboard"/></svg></span> <span id="rcopy-label">คัดลอกลิงก์</span>
           </button>
-          <a id="receipt-open-btn" href="#" target="_blank" class="btn-outline" style="width:auto;padding:12px 16px;text-decoration:none;display:flex;align-items:center">📄 เปิด</a>
+          <a id="receipt-open-btn" href="#" target="_blank" class="btn-outline" style="width:auto;padding:12px 16px;text-decoration:none;display:flex;align-items:center"><svg class="ic"><use href="#i-doc"/></svg> เปิด</a>
         </div>
       </div>
 
@@ -372,14 +591,14 @@ function flashCopied() {
   document.getElementById('copy-icon').textContent = '✅';
   document.getElementById('copy-label').textContent = 'คัดลอกแล้ว!';
   setTimeout(()=>{
-    document.getElementById('copy-icon').textContent = '📋';
+    document.getElementById('copy-icon').textContent = '<svg class="ic"><use href="#i-clipboard"/></svg>';
     document.getElementById('copy-label').textContent = 'คัดลอกรหัส';
   }, 2000);
 }
 
 function shareCode() {
   const d = window._repairData || {};
-  const text = `🔧 แจ้งซ่อมเครื่อง KitchenAid\n`
+  const text = `<svg class="ic"><use href="#i-wrench"/></svg> แจ้งซ่อมเครื่อง KitchenAid\n`
     + `ชื่อ: ${d.customerName||''}\n`
     + `โทร: ${d.customerPhone||''}\n`
     + `รุ่น: ${d.model||''} ${d.color?'/ '+d.color:''}\n`
@@ -436,7 +655,7 @@ function flashReceiptCopied() {
   document.getElementById('rcopy-icon').textContent = '✅';
   document.getElementById('rcopy-label').textContent = 'คัดลอกแล้ว!';
   setTimeout(() => {
-    document.getElementById('rcopy-icon').textContent = '📋';
+    document.getElementById('rcopy-icon').textContent = '<svg class="ic"><use href="#i-clipboard"/></svg>';
     document.getElementById('rcopy-label').textContent = 'คัดลอกลิงก์';
   }, 2000);
 }
@@ -446,7 +665,7 @@ function flashReceiptCopied() {
 <div id="shipping-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55)" onclick="closeModal('shipping-modal')">
   <div style="position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;padding:24px;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="font-weight:700;font-size:1.1rem;color:#111827">📦 ข้อมูลการจัดส่งเครื่อง</h3>
+      <h3 style="font-weight:700;font-size:1.1rem;color:#111827"><svg class="ic"><use href="#i-box"/></svg> ข้อมูลการจัดส่งเครื่อง</h3>
       <button onclick="closeModal('shipping-modal')" style="font-size:1.8rem;line-height:1;color:#9ca3af;background:none;border:none;cursor:pointer">&times;</button>
     </div>
     <div style="background:#f9fafb;border-radius:12px;padding:16px;margin-bottom:12px;font-size:0.9rem;color:#374151;line-height:1.8">
@@ -468,7 +687,7 @@ function flashReceiptCopied() {
 <div id="packing-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55)" onclick="closeModal('packing-modal')">
   <div style="position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;padding:24px;max-height:85vh;overflow-y:auto" onclick="event.stopPropagation()">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="font-weight:700;font-size:1.1rem;color:#111827">📦 วิธีแพ็คเครื่องก่อนส่ง</h3>
+      <h3 style="font-weight:700;font-size:1.1rem;color:#111827"><svg class="ic"><use href="#i-box"/></svg> วิธีแพ็คเครื่องก่อนส่ง</h3>
       <button onclick="closeModal('packing-modal')" style="font-size:1.8rem;line-height:1;color:#9ca3af;background:none;border:none;cursor:pointer">&times;</button>
     </div>
     <div style="background:#f9fafb;border-radius:12px;padding:16px;margin-bottom:12px;font-size:0.9rem;color:#374151">

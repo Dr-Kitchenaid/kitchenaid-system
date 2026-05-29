@@ -138,10 +138,13 @@ export default {
       return json({ ok: true });
     }
 
-    // GET /stock/low — items where stock <= minStock (and minStock > 0)
+    // GET /stock/low — items that are out of stock (always) OR at/below minStock (if minStock > 0)
     if (request.method === 'GET' && url.pathname === '/stock/low') {
       const parts = await env.KV.get('stock_parts', 'json') || [];
-      const low = parts.filter(p => (p.minStock || 0) > 0 && (p.stock || 0) <= (p.minStock || 0));
+      const low = parts.filter(p => {
+        const s = p.stock || 0, m = p.minStock || 0;
+        return s === 0 || (m > 0 && s <= m);
+      });
       return json(low);
     }
 
