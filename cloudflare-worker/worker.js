@@ -148,8 +148,11 @@ export default {
       return json(low);
     }
 
-    // GET /export — all business data
-    if (request.method === 'GET' && url.pathname === '/export') {
+    // POST /migrate — ONE-TIME migration: combine 7 legacy keys → single `biz_all` key.
+    // Reads the 7 original keys, writes them into `biz_all`. Does NOT delete the old
+    // keys (kept as backup until verified). Safe to run multiple times (idempotent).
+    // Run:  curl -X POST -H "X-API-Key: <API_KEY>" https://<worker>/migrate
+    if (request.method === 'POST' && url.pathname === '/migrate') {
       const [quotations, invoices, repairs, parts, settings, sequences, lastModified] = await Promise.all([
         env.KV.get('biz_quotations',   'json'),
         env.KV.get('biz_invoices',     'json'),
@@ -159,14 +162,40 @@ export default {
         env.KV.get('biz_sequences',    'json'),
         env.KV.get('biz_lastModified'),
       ]);
-      return json({
+      const merged = {
         quotations:   quotations || [],
         invoices:     invoices   || [],
         repairs:      repairs    || [],
         parts:        parts      || [],
         settings:     settings   || {},
         sequences:    sequences  || {},
-        lastModified: lastModified ? Number(lastModified) : 0,
+        lastModified: lastModified ? Number(lastModified) : Date.now(),
+      };
+      await env.KV.put('biz_all', JSON.stringify(merged));
+      return json({
+        ok: true,
+        migrated: true,
+        counts: {
+          quotations: merged.quotations.length,
+          invoices:   merged.invoices.length,
+          repairs:    merged.repairs.length,
+          parts:      merged.parts.length,
+        },
+        lastModified: merged.lastModified,
+      });
+    }
+
+    // GET /export — all business data
+    if (request.method === 'GET' && url.pathname === '/export') {
+      const all = await readBizAll(env);
+      return json({
+        quotations:   all.quotations || [],
+        invoices:     all.invoices   || [],
+        repairs:      all.repairs    || [],
+        parts:        all.parts      || [],
+        settings:     all.settings   || {},
+        sequences:    all.sequences  || {},
+        lastModified: all.lastModified ? Number(all.lastModified) : 0,
       });
     }
 
@@ -177,51 +206,75 @@ export default {
       const body = await request.json().catch(() => ({}));
       const clientLastModified = body._lastModified;
 
+      // Read current combined state once (handles biz_all + legacy fallback).
+      const current = await readBizAll(env);
+
       if (clientLastModified !== undefined) {
-        const serverLastModifiedRaw = await env.KV.get('biz_lastModified');
-        const serverLastModified = serverLastModifiedRaw ? Number(serverLastModifiedRaw) : 0;
+        const serverLastModified = current.lastModified ? Number(current.lastModified) : 0;
         if (serverLastModified > Number(clientLastModified)) {
-          const [quotations, invoices, repairs, parts, settings, sequences] = await Promise.all([
-            env.KV.get('biz_quotations', 'json'),
-            env.KV.get('biz_invoices',   'json'),
-            env.KV.get('biz_repairs',    'json'),
-            env.KV.get('biz_parts',      'json'),
-            env.KV.get('biz_settings',   'json'),
-            env.KV.get('biz_sequences',  'json'),
-          ]);
           return json({
             ok: false,
             conflict: true,
             serverLastModified,
             clientLastModified: Number(clientLastModified),
             currentData: {
-              quotations: quotations || [],
-              invoices:   invoices   || [],
-              repairs:    repairs    || [],
-              parts:      parts      || [],
-              settings:   settings   || {},
-              sequences:  sequences  || {},
+              quotations: current.quotations || [],
+              invoices:   current.invoices   || [],
+              repairs:    current.repairs    || [],
+              parts:      current.parts      || [],
+              settings:   current.settings   || {},
+              sequences:  current.sequences  || {},
             },
           }, 409);
         }
       }
 
+      // Merge incoming fields onto current state, then write ONE key (biz_all).
       const newLastModified = Date.now();
-      const ops = [];
-      if (body.quotations !== undefined) ops.push(env.KV.put('biz_quotations', JSON.stringify(body.quotations)));
-      if (body.invoices   !== undefined) ops.push(env.KV.put('biz_invoices',   JSON.stringify(body.invoices)));
-      if (body.repairs    !== undefined) ops.push(env.KV.put('biz_repairs',    JSON.stringify(body.repairs)));
-      if (body.parts      !== undefined) ops.push(env.KV.put('biz_parts',      JSON.stringify(body.parts)));
-      if (body.settings   !== undefined) ops.push(env.KV.put('biz_settings',   JSON.stringify(body.settings)));
-      if (body.sequences  !== undefined) ops.push(env.KV.put('biz_sequences',  JSON.stringify(body.sequences)));
-      ops.push(env.KV.put('biz_lastModified', String(newLastModified)));
-      await Promise.all(ops);
+      const merged = {
+        quotations:   body.quotations !== undefined ? body.quotations : (current.quotations || []),
+        invoices:     body.invoices   !== undefined ? body.invoices   : (current.invoices   || []),
+        repairs:      body.repairs    !== undefined ? body.repairs    : (current.repairs    || []),
+        parts:        body.parts      !== undefined ? body.parts      : (current.parts      || []),
+        settings:     body.settings   !== undefined ? body.settings   : (current.settings   || {}),
+        sequences:    body.sequences  !== undefined ? body.sequences  : (current.sequences  || {}),
+        lastModified: newLastModified,
+      };
+      await env.KV.put('biz_all', JSON.stringify(merged));
       return json({ ok: true, lastModified: newLastModified });
     }
 
     return new Response('Not Found', { status: 404 });
   },
 };
+
+// Read combined business data.
+// Prefers the single `biz_all` key; falls back to the 7 legacy keys if `biz_all`
+// does not exist yet (pre-migration), so no data is lost during rollout.
+async function readBizAll(env) {
+  const all = await env.KV.get('biz_all', 'json');
+  if (all) return all;
+
+  // Legacy fallback — read the 7 original keys.
+  const [quotations, invoices, repairs, parts, settings, sequences, lastModified] = await Promise.all([
+    env.KV.get('biz_quotations',   'json'),
+    env.KV.get('biz_invoices',     'json'),
+    env.KV.get('biz_repairs',      'json'),
+    env.KV.get('biz_parts',        'json'),
+    env.KV.get('biz_settings',     'json'),
+    env.KV.get('biz_sequences',    'json'),
+    env.KV.get('biz_lastModified'),
+  ]);
+  return {
+    quotations:   quotations || [],
+    invoices:     invoices   || [],
+    repairs:      repairs    || [],
+    parts:        parts      || [],
+    settings:     settings   || {},
+    sequences:    sequences  || {},
+    lastModified: lastModified ? Number(lastModified) : 0,
+  };
+}
 
 function checkApiKey(request, env) {
   return request.headers.get('X-API-Key') === env.API_KEY;
