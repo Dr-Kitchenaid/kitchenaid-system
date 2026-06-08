@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงานยอดขาย - KitchenAid</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .it-sortable{cursor:pointer;user-select:none;white-space:nowrap}
+    .it-sortable:hover{color:var(--green-d)}
+    .it-arrow{font-size:.8em;color:var(--green-d)}
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <!-- KA Onigiri Theme — line-art icons, stroke=currentColor, viewBox 24x24 -->
+
+  <symbol id="i-mixer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 4h10l1 5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4z"/>
+    <path d="M9 13v3"/>
+    <path d="M14 13v3"/>
+    <rect x="6" y="16" width="11" height="4" rx="1.2"/>
+    <circle cx="11.5" cy="8" r="0.8" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 11l9-7 9 7"/>
+    <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/>
+  </symbol>
+
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="8" r="3.2"/>
+    <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+    <circle cx="17" cy="9" r="2.4"/>
+    <path d="M16 14c2.8 0 5 2.2 5 5"/>
+  </symbol>
+
+  <symbol id="i-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15.5 3.5a4.5 4.5 0 0 0-5.7 5.7L3 16l4 4 6.8-6.8a4.5 4.5 0 0 0 5.7-5.7L17 6l-2-2-2 2z"/>
+  </symbol>
+
+  <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+    <path d="M14 3v4h4"/>
+    <path d="M8 12h8"/>
+    <path d="M8 16h8"/>
+    <path d="M8 8h3"/>
+  </symbol>
+
+  <symbol id="i-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 3h14v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L5 21z"/>
+    <path d="M8 8h8"/>
+    <path d="M8 12h8"/>
+    <path d="M8 16h5"/>
+  </symbol>
+
+  <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 7l9-4 9 4-9 4z"/>
+    <path d="M3 7v10l9 4 9-4V7"/>
+    <path d="M12 11v10"/>
+  </symbol>
+
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>
+    <circle cx="9" cy="11" r="0.9" fill="currentColor"/>
+    <circle cx="12" cy="11" r="0.9" fill="currentColor"/>
+    <circle cx="15" cy="11" r="0.9" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M12 2v3M12 19v3M22 12h-3M5 12H2M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05L4.93 4.93"/>
+  </symbol>
+
+  <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="8"/>
+    <path d="M12 7v10"/>
+    <path d="M15 9.5c0-1.4-1.3-2-3-2s-3 .6-3 2 1.3 2 3 2 3 .6 3 2-1.3 2-3 2-3-.6-3-2"/>
+  </symbol>
+
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 20V4"/>
+    <path d="M4 20h16"/>
+    <path d="M7 17v-5M11 17V9M15 17v-3M19 17V7"/>
+  </symbol>
+
+  <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3l10 18H2z"/>
+    <path d="M12 10v5"/>
+    <circle cx="12" cy="18" r="0.8" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="16" rx="1.5"/>
+    <path d="M3 10h18"/>
+    <path d="M8 3v4M16 3v4"/>
+  </symbol>
+
+  <symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 9V4h10v5"/>
+    <rect x="4" y="9" width="16" height="8" rx="1"/>
+    <rect x="7" y="14" width="10" height="6" rx="0.5"/>
+    <circle cx="17" cy="12" r="0.8" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 4v12"/>
+    <path d="M7 11l5 5 5-5"/>
+    <path d="M5 20h14"/>
+  </symbol>
+
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 12a8 8 0 0 1 14-5"/>
+    <path d="M18 4v4h-4"/>
+    <path d="M20 12a8 8 0 0 1-14 5"/>
+    <path d="M6 20v-4h4"/>
+  </symbol>
+
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 7h16M4 12h16M4 17h16"/>
+  </symbol>
+</svg>
+
+
+
+<nav class="bg-red-700 text-white shadow-lg no-print sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-14">
+      <a href="index.html" class="flex items-center gap-2 font-bold text-lg text-white no-underline">
+        <span id="nav-icon" class="text-2xl"><svg class="ic"><use href="#i-mixer"/></svg></span><img id="nav-logo" style="height:32px;display:none;border-radius:4px;object-fit:contain" alt="logo"><span>KitchenAid</span>
+      </a>
+      <div class="hidden md:flex gap-1">
+        <a href="index.html"      class="nav-link"><svg class="ic"><use href="#i-home"/></svg> แดชบอร์ด</a>
+        <a href="customer-history.html" class="nav-link"><svg class="ic"><use href="#i-users"/></svg> ประวัติลูกค้า</a>
+        <a href="repair.html"     class="nav-link"><svg class="ic"><use href="#i-wrench"/></svg> รับเครื่องซ่อม</a>
+        <a href="quotation.html"  class="nav-link"><svg class="ic"><use href="#i-doc"/></svg> ใบเสนอราคา</a>
+        <a href="invoice.html"    class="nav-link"><svg class="ic"><use href="#i-receipt"/></svg> บิล</a>
+        <a href="report-sales.html" class="nav-link active"><svg class="ic"><use href="#i-chart"/></svg> รายงานยอดขาย</a>
+        <a href="stock.html"      class="nav-link"><svg class="ic"><use href="#i-box"/></svg> สต็อก</a>
+        <a href="inbox.html"      class="nav-link"><svg class="ic"><use href="#i-chat"/></svg> Inbox</a>
+        <a href="settings.html"   class="nav-link"><svg class="ic"><use href="#i-gear"/></svg> ตั้งค่า</a>
+      </div>
+      <button onclick="document.getElementById('mnav').classList.toggle('hidden')" class="md:hidden p-2 rounded hover:bg-red-600"><svg class="ic"><use href="#i-menu"/></svg></button>
+    </div>
+    <div id="mnav" class="hidden md:hidden border-t border-red-600 py-2">
+      <a href="index.html"     class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-home"/></svg> แดชบอร์ด</a>
+      <a href="customer-history.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-users"/></svg> ประวัติลูกค้า</a>
+      <a href="repair.html"    class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-wrench"/></svg> รับเครื่องซ่อม</a>
+      <a href="quotation.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-doc"/></svg> ใบเสนอราคา</a>
+      <a href="invoice.html"   class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-receipt"/></svg> บิล</a>
+      <a href="report-sales.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-chart"/></svg> รายงานยอดขาย</a>
+      <a href="stock.html"     class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-box"/></svg> สต็อก</a>
+      <a href="inbox.html"     class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-chat"/></svg> Inbox</a>
+      <a href="settings.html"  class="block py-2 px-3 rounded hover:bg-red-600"><svg class="ic"><use href="#i-gear"/></svg> ตั้งค่า</a>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900"><svg class="ic"><use href="#i-chart"/></svg> รายงานยอดขาย</h1>
+      <p class="text-sm text-gray-500 mt-0.5">สรุปยอดขายจากบิล รายวัน / รายเดือน / รายปี</p>
+    </div>
+    <button class="btn btn-info btn-sm no-print" onclick="window.print()"><svg class="ic"><use href="#i-print"/></svg> พิมพ์รายงาน</button>
+  </div>
+
+  <!-- Controls -->
+  <div class="card mb-4 no-print">
+    <div class="p-4 flex flex-wrap gap-4 items-end">
+      <div>
+        <label class="form-label">ช่วงเวลา</label>
+        <div class="flex flex-wrap gap-2">
+          <span class="pill pill-active" data-g="day"   onclick="setGrouping('day',this)">รายวัน</span>
+          <span class="pill pill-inactive" data-g="month" onclick="setGrouping('month',this)">รายเดือน</span>
+          <span class="pill pill-inactive" data-g="year"  onclick="setGrouping('year',this)">รายปี</span>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">จากวันที่</label>
+        <input id="f-from" class="form-input" type="date" style="max-width:170px" onchange="render()">
+      </div>
+      <div>
+        <label class="form-label">ถึงวันที่</label>
+        <input id="f-to" class="form-input" type="date" style="max-width:170px" onchange="render()">
+      </div>
+      <div>
+        <label class="form-label">นับยอด</label>
+        <select id="f-basis" class="form-input" style="max-width:210px" onchange="render()">
+          <option value="all">ยอดขายทั้งหมด (ตามวันที่บิล)</option>
+          <option value="paid">เฉพาะที่ชำระแล้ว (ตามวันรับเงิน)</option>
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-secondary btn-sm" onclick="quickRange('thisMonth')">เดือนนี้</button>
+        <button class="btn btn-secondary btn-sm" onclick="quickRange('thisYear')">ปีนี้</button>
+        <button class="btn btn-secondary btn-sm" onclick="quickRange('all')">ทั้งหมด</button>
+      </div>
+      <div>
+        <label class="form-label">มุมมอง</label>
+        <div class="flex flex-wrap gap-2">
+          <span class="pill pill-active"   data-view="overview" onclick="setView('overview',this)">ภาพรวม</span>
+          <span class="pill pill-inactive" data-view="items"    onclick="setView('items',this)">รายการสินค้า</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: ภาพรวม ===== -->
+  <div id="view-overview">
+
+  <!-- Summary cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="stat-card">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="stat-lbl">ยอดขายรวม</div>
+          <div class="stat-val mt-1 text-green-600" id="s-total" style="font-size:1.5rem">฿0</div>
+        </div>
+        <div class="stat-icon bg-green-100"><svg class="ic"><use href="#i-coin"/></svg></div>
+      </div>
+      <div class="text-xs text-gray-400 mt-3" id="s-basis-lbl">ตามวันที่บิล</div>
+    </div>
+    <div class="stat-card">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="stat-lbl">จำนวนบิล</div>
+          <div class="stat-val mt-1" id="s-count">0</div>
+        </div>
+        <div class="stat-icon bg-blue-100"><svg class="ic"><use href="#i-receipt"/></svg></div>
+      </div>
+      <div class="text-xs text-gray-400 mt-3">บิลในช่วงที่เลือก</div>
+    </div>
+    <div class="stat-card">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="stat-lbl">ค่าเฉลี่ยต่อบิล</div>
+          <div class="stat-val mt-1 text-orange-600" id="s-avg" style="font-size:1.5rem">฿0</div>
+        </div>
+        <div class="stat-icon bg-orange-100"><svg class="ic"><use href="#i-chart"/></svg></div>
+      </div>
+      <div class="text-xs text-gray-400 mt-3">ยอดขายรวม / จำนวนบิล</div>
+    </div>
+    <div class="stat-card">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="stat-lbl">ยอดค้างชำระ</div>
+          <div class="stat-val mt-1 text-red-600" id="s-unpaid" style="font-size:1.5rem">฿0</div>
+        </div>
+        <div class="stat-icon bg-red-100"><svg class="ic"><use href="#i-warn"/></svg></div>
+      </div>
+      <div class="text-xs text-gray-400 mt-3" id="s-unpaid-cnt">0 บิล (ในช่วงที่เลือก)</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="card mb-6">
+    <div class="card-header flex items-center justify-between">
+      <span><svg class="ic"><use href="#i-chart"/></svg> กราฟยอดขาย <span id="chart-sub" class="text-sm font-normal text-gray-400"></span></span>
+    </div>
+    <div class="p-4">
+      <div style="position:relative;height:340px"><canvas id="sales-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Detail table -->
+  <div class="card">
+    <div class="card-header flex items-center justify-between">
+      <span><svg class="ic"><use href="#i-receipt"/></svg> รายละเอียดบิล <span id="tbl-count" class="text-sm font-normal text-gray-400"></span></span>
+      <input id="tbl-search" class="form-input no-print" style="max-width:240px" placeholder="ค้นหาเลขที่ / ลูกค้า..." oninput="renderTable()">
+    </div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>เลขที่</th>
+            <th>วันที่</th>
+            <th>ลูกค้า</th>
+            <th>สถานะ</th>
+            <th class="text-right">ยอด</th>
+          </tr>
+        </thead>
+        <tbody id="rep-tbody">
+          <tr><td colspan="5" class="text-center text-gray-400 py-10">กำลังโหลด...</td></tr>
+        </tbody>
+        <tfoot>
+          <tr class="font-bold" style="background:var(--cream-light)">
+            <td colspan="4" class="text-right" style="padding:11px 14px">รวม</td>
+            <td class="text-right" id="tbl-total" style="padding:11px 14px;color:var(--green-d)">฿0.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  </div><!-- /view-overview -->
+
+  <!-- ===== VIEW: รายการสินค้า ===== -->
+  <div id="view-items" style="display:none">
+
+    <!-- Item summary cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="stat-card">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="stat-lbl">จำนวนรายการ (ชนิด)</div>
+            <div class="stat-val mt-1 text-blue-600" id="it-distinct">0</div>
+          </div>
+          <div class="stat-icon bg-blue-100"><svg class="ic"><use href="#i-box"/></svg></div>
+        </div>
+        <div class="text-xs text-gray-400 mt-3">ชื่อรายการที่ไม่ซ้ำกัน</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="stat-lbl">ชิ้นที่ขายรวม</div>
+            <div class="stat-val mt-1" id="it-qty">0</div>
+          </div>
+          <div class="stat-icon bg-orange-100"><svg class="ic"><use href="#i-coin"/></svg></div>
+        </div>
+        <div class="text-xs text-gray-400 mt-3">รวมจำนวนชิ้นทุกรายการ</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="stat-lbl">ยอดเงินรวม (รายการ)</div>
+            <div class="stat-val mt-1 text-green-600" id="it-amount" style="font-size:1.5rem">฿0</div>
+          </div>
+          <div class="stat-icon bg-green-100"><svg class="ic"><use href="#i-coin"/></svg></div>
+        </div>
+        <div class="text-xs text-gray-400 mt-3" id="it-amount-note">รวมยอดทุกรายการ</div>
+      </div>
+      <div class="stat-card">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="stat-lbl">รายการขายดีอันดับ 1</div>
+            <div class="stat-val mt-1 text-red-600" id="it-top1" style="font-size:1.05rem;line-height:1.3">-</div>
+          </div>
+          <div class="stat-icon bg-red-100"><svg class="ic"><use href="#i-chart"/></svg></div>
+        </div>
+        <div class="text-xs text-gray-400 mt-3" id="it-top1-sub">-</div>
+      </div>
+    </div>
+
+    <!-- Item chart -->
+    <div class="card mb-6">
+      <div class="card-header flex flex-wrap items-center justify-between gap-2">
+        <span><svg class="ic"><use href="#i-chart"/></svg> รายการขายดี <span id="it-chart-sub" class="text-sm font-normal text-gray-400"></span></span>
+        <div class="flex flex-wrap gap-2 no-print">
+          <span class="pill pill-active"   data-imetric="amount" onclick="setItemMetric('amount',this)">ตามยอดเงิน</span>
+          <span class="pill pill-inactive" data-imetric="qty"    onclick="setItemMetric('qty',this)">ตามจำนวนชิ้น</span>
+        </div>
+      </div>
+      <div class="p-4">
+        <div style="position:relative;height:360px"><canvas id="items-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Item table -->
+    <div class="card">
+      <div class="card-header flex flex-wrap items-center justify-between gap-2">
+        <span><svg class="ic"><use href="#i-box"/></svg> สรุปต่อรายการ <span id="it-tbl-count" class="text-sm font-normal text-gray-400"></span></span>
+        <input id="it-search" class="form-input no-print" style="max-width:240px" placeholder="ค้นหาชื่อรายการ..." oninput="renderItemTable()">
+      </div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:42px" class="text-right">#</th>
+              <th>ชื่อรายการ</th>
+              <th class="text-right it-sortable" data-sort="qty" onclick="setItemSort('qty')">จำนวนชิ้น <span class="it-arrow" data-arrow="qty"></span></th>
+              <th class="text-right it-sortable" data-sort="amount" onclick="setItemSort('amount')">ยอดเงินรวม <span class="it-arrow" data-arrow="amount"></span></th>
+              <th class="text-right it-sortable" data-sort="bills" onclick="setItemSort('bills')">จำนวนบิล <span class="it-arrow" data-arrow="bills"></span></th>
+              <th class="text-right it-sortable" data-sort="avg" onclick="setItemSort('avg')">ราคาเฉลี่ย/ชิ้น <span class="it-arrow" data-arrow="avg"></span></th>
+            </tr>
+          </thead>
+          <tbody id="it-tbody">
+            <tr><td colspan="6" class="text-center text-gray-400 py-10">กำลังโหลด...</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="font-bold" style="background:var(--cream-light)">
+              <td colspan="2" class="text-right" style="padding:11px 14px">รวม</td>
+              <td class="text-right" id="it-foot-qty" style="padding:11px 14px">0</td>
+              <td class="text-right" id="it-foot-amount" style="padding:11px 14px;color:var(--green-d)">฿0.00</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /view-items -->
+
+</main>
+
+<script src="js/db.js"></script>
+<script>
+  const fmt = (n,d=2)=>Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmt0 = n=>Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0});
+  const fmtDate = d=>d?new Date(d+'T00:00:00').toLocaleDateString('th-TH'):'';
+
+  const invStatus = {unpaid:'badge-unpaid',paid:'badge-paid',overdue:'badge-overdue'};
+  const invLabel  = {unpaid:'ค้างชำระ',paid:'ชำระแล้ว',overdue:'เกินกำหนด'};
+  function badge(s){ return `<span class="badge ${invStatus[s]||'badge-unpaid'}">${invLabel[s]||s}</span>`; }
+
+  let grouping = 'month';   // day | month | year
+  let chart = null;
+  let scopedInvoices = [];  // invoices within selected date range (after basis filter)
+
+  // --- Item breakdown view state ---
+  let currentView = 'overview';   // overview | items
+  let itemChart   = null;
+  let itemMetric  = 'amount';     // chart top-N metric: amount | qty
+  let itemSortKey = 'qty';        // table sort column: qty | amount | bills | avg
+  let itemSortDir = 'desc';       // desc | asc
+  let itemRows    = [];           // aggregated rows for current scope
+
+  // basisDate: which date drives the report (bill date vs paid date)
+  function basisDate(inv){
+    const basis = document.getElementById('f-basis').value;
+    const billDate = inv.date || (inv.createdAt ? inv.createdAt.slice(0,10) : null);
+    if (basis === 'paid') {
+      if (inv.status !== 'paid') return null;       // not paid → excluded in paid mode
+      return inv.paidAt || billDate;                // paid w/o paidAt → fall back to bill date so total isn't lost
+    }
+    return billDate;
+  }
+
+  function setGrouping(g, el){
+    grouping = g;
+    document.querySelectorAll('.pill[data-g]').forEach(p=>p.classList.replace('pill-active','pill-inactive'));
+    el.classList.replace('pill-inactive','pill-active');
+    render();
+  }
+
+  function quickRange(kind){
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const fromEl = document.getElementById('f-from');
+    const toEl   = document.getElementById('f-to');
+    const iso = dt => dt.toISOString().slice(0,10);
+    if (kind === 'thisMonth') {
+      fromEl.value = iso(new Date(y, m, 1));
+      toEl.value   = iso(new Date(y, m+1, 0));
+      pickGrouping('day');
+    } else if (kind === 'thisYear') {
+      fromEl.value = iso(new Date(y, 0, 1));
+      toEl.value   = iso(new Date(y, 11, 31));
+      pickGrouping('month');
+    } else { // all
+      fromEl.value = '';
+      toEl.value   = '';
+      pickGrouping('month');
+    }
+    render();
+  }
+
+  function pickGrouping(g){
+    grouping = g;
+    document.querySelectorAll('.pill[data-g]').forEach(p=>{
+      if (p.dataset.g === g) p.classList.replace('pill-inactive','pill-active');
+      else p.classList.replace('pill-active','pill-inactive');
+    });
+  }
+
+  // Group label/key from an ISO date string (YYYY-MM-DD) per grouping mode
+  function bucketKey(dateStr){
+    if (!dateStr) return null;
+    if (grouping === 'year')  return dateStr.slice(0,4);
+    if (grouping === 'month') return dateStr.slice(0,7);
+    return dateStr.slice(0,10);
+  }
+  function bucketLabel(key){
+    if (grouping === 'year')  return 'พ.ศ. ' + (Number(key)+543);
+    if (grouping === 'month') {
+      const [yy,mm] = key.split('-');
+      const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+      return months[Number(mm)-1] + ' ' + (Number(yy)+543).toString().slice(-2);
+    }
+    const [yy,mm,dd] = key.split('-');
+    return `${Number(dd)}/${Number(mm)}`;
+  }
+
+  function inRange(dateStr){
+    if (!dateStr) return false;
+    const from = document.getElementById('f-from').value;
+    const to   = document.getElementById('f-to').value;
+    if (from && dateStr < from) return false;
+    if (to && dateStr > to) return false;
+    return true;
+  }
+
+  function render(){
+    const basis = document.getElementById('f-basis').value;
+    document.getElementById('s-basis-lbl').textContent =
+      basis === 'paid' ? 'ตามวันที่รับเงิน (ชำระแล้ว)' : 'ตามวันที่บิล (ทุกสถานะ)';
+
+    // Filter invoices into scope by basis date + range
+    const all = DB.getInvoices();
+    scopedInvoices = all.filter(inv=>{
+      const d = basisDate(inv);
+      return d && inRange(d);
+    });
+
+    // Summary
+    const total = scopedInvoices.reduce((s,i)=>s+(i.total||0),0);
+    const count = scopedInvoices.length;
+    const avg = count ? total/count : 0;
+    document.getElementById('s-total').textContent = '฿'+fmt(total);
+    document.getElementById('s-count').textContent = fmt0(count);
+    document.getElementById('s-avg').textContent   = '฿'+fmt(avg);
+
+    // Unpaid within scope (only meaningful for 'all' basis; on paid basis there are none)
+    const unpaidList = scopedInvoices.filter(i=>i.status!=='paid');
+    const unpaidSum = unpaidList.reduce((s,i)=>s+(i.total||0),0);
+    document.getElementById('s-unpaid').textContent = '฿'+fmt(unpaidSum);
+    document.getElementById('s-unpaid-cnt').textContent = fmt0(unpaidList.length)+' บิล (ในช่วงที่เลือก)';
+
+    renderChart();
+    renderTable();
+    renderItems();
+  }
+
+  // ---- View toggle (ภาพรวม / รายการสินค้า) ----
+  function setView(v, el){
+    currentView = v;
+    document.querySelectorAll('.pill[data-view]').forEach(p=>p.classList.replace('pill-active','pill-inactive'));
+    el.classList.replace('pill-inactive','pill-active');
+    document.getElementById('view-overview').style.display = v==='overview' ? '' : 'none';
+    document.getElementById('view-items').style.display    = v==='items'    ? '' : 'none';
+    // (re)draw the chart of the now-visible view so Chart.js sizes correctly
+    if (v==='overview') renderChart();
+    else renderItemChart();
+  }
+
+  function buildBuckets(){
+    const map = new Map();
+    for (const inv of scopedInvoices){
+      const key = bucketKey(basisDate(inv));
+      if (!key) continue;
+      map.set(key, (map.get(key)||0) + (inv.total||0));
+    }
+    const keys = [...map.keys()].sort();
+    return { keys, labels: keys.map(bucketLabel), values: keys.map(k=>map.get(k)) };
+  }
+
+  function renderChart(){
+    const { labels, values } = buildBuckets();
+    const subTxt = {day:'(รายวัน)',month:'(รายเดือน)',year:'(รายปี)'}[grouping];
+    document.getElementById('chart-sub').textContent = subTxt;
+
+    const ctx = document.getElementById('sales-chart');
+    if (chart) chart.destroy();
+    if (!labels.length){
+      chart = null;
+      const c = ctx.getContext('2d');
+      c.clearRect(0,0,ctx.width,ctx.height);
+      c.fillStyle = '#8B7355';
+      c.font = "16px 'Sarabun', sans-serif";
+      c.textAlign = 'center';
+      c.fillText('ไม่มีข้อมูลในช่วงที่เลือก', ctx.width/2, ctx.height/2);
+      return;
+    }
+    // Line for day (could be many points), bar for month/year
+    const useLine = grouping === 'day';
+    chart = new Chart(ctx, {
+      type: useLine ? 'line' : 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'ยอดขาย (บาท)',
+          data: values,
+          backgroundColor: useLine ? 'rgba(122,145,99,0.15)' : 'rgba(122,145,99,0.65)',
+          borderColor: '#7A9163',
+          borderWidth: 2,
+          borderRadius: useLine ? 0 : 8,
+          fill: useLine,
+          tension: 0.25,
+          pointBackgroundColor: '#7A9163',
+          pointRadius: useLine ? 3 : 0,
+          maxBarThickness: 48,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: c => ' ฿' + fmt(c.parsed.y) },
+            backgroundColor: '#6B4E2E',
+            titleFont: { family: 'Sarabun' },
+            bodyFont: { family: 'Sarabun' },
+          }
+        },
+        scales: {
+          x: { grid: { display:false }, ticks: { color:'#8B7355', font:{family:'Sarabun'} } },
+          y: {
+            beginAtZero: true,
+            grid: { color:'#E4D4B5' },
+            ticks: { color:'#8B7355', font:{family:'Sarabun'}, callback: v=>'฿'+fmt0(v) }
+          }
+        }
+      }
+    });
+  }
+
+  function renderTable(){
+    const q = (document.getElementById('tbl-search').value||'').toLowerCase();
+    let list = scopedInvoices.slice().sort((a,b)=>{
+      const da = basisDate(a)||'', db = basisDate(b)||'';
+      return db.localeCompare(da);
+    });
+    if (q) list = list.filter(x=>((x.number||'')+(x.customerName||'')).toLowerCase().includes(q));
+
+    const tbody = document.getElementById('rep-tbody');
+    document.getElementById('tbl-count').textContent = `(${fmt0(list.length)} บิล)`;
+    if (!list.length){
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-10">ไม่พบข้อมูลในช่วงที่เลือก</td></tr>';
+      document.getElementById('tbl-total').textContent = '฿0.00';
+      return;
+    }
+    tbody.innerHTML = list.map(x=>`
+      <tr>
+        <td class="font-mono text-sm text-blue-600">${x.number||'-'}</td>
+        <td class="text-sm">${fmtDate(basisDate(x))}</td>
+        <td class="text-sm font-medium">${(x.customerName||'-')}</td>
+        <td>${badge(x.status)}</td>
+        <td class="text-right text-sm font-medium">฿${fmt(x.total)}</td>
+      </tr>`).join('');
+    const sum = list.reduce((s,i)=>s+(i.total||0),0);
+    document.getElementById('tbl-total').textContent = '฿'+fmt(sum);
+  }
+
+  // ====== ITEM BREAKDOWN ======
+  // Normalize a description so equal names merge: trim + collapse inner whitespace.
+  function normDesc(s){
+    const t = (s||'').replace(/\s+/g,' ').trim();
+    return t || '(ไม่ระบุชื่อ)';
+  }
+
+  // Aggregate items across scopedInvoices (already filtered by date range + basis).
+  function aggregateItems(){
+    const map = new Map();   // normName -> {name, qty, amount, bills:Set}
+    for (const inv of scopedInvoices){
+      const items = Array.isArray(inv.items) ? inv.items : [];
+      for (const it of items){
+        if (!it) continue;
+        const name = normDesc(it.description);
+        let e = map.get(name);
+        if (!e){ e = { name, qty:0, amount:0, bills:new Set() }; map.set(name, e); }
+        e.qty    += Number(it.qty||0);
+        e.amount += Number(it.amount||0);
+        e.bills.add(inv.id);
+      }
+    }
+    return [...map.values()].map(e=>({
+      name: e.name,
+      qty: e.qty,
+      amount: e.amount,
+      bills: e.bills.size,
+      avg: e.qty ? e.amount/e.qty : 0,
+    }));
+  }
+
+  function renderItems(){
+    itemRows = aggregateItems();
+
+    const totQty    = itemRows.reduce((s,r)=>s+r.qty,0);
+    const totAmount = itemRows.reduce((s,r)=>s+r.amount,0);
+    const billTotal = scopedInvoices.reduce((s,i)=>s+(i.total||0),0);
+
+    document.getElementById('it-distinct').textContent = fmt0(itemRows.length);
+    document.getElementById('it-qty').textContent      = fmt0(totQty);
+    document.getElementById('it-amount').textContent   = '฿'+fmt(totAmount);
+
+    // Note if item total drifts notably from bill total (bill-level disc/vat)
+    const diff = billTotal - totAmount;
+    const note = document.getElementById('it-amount-note');
+    if (Math.abs(diff) > Math.max(1, billTotal*0.005)) {
+      note.textContent = `ต่างจากยอดบิลรวม ฿${fmt(billTotal)} (±฿${fmt(Math.abs(diff))} จาก VAT/ส่วนลดระดับบิล)`;
+    } else {
+      note.textContent = 'รวมยอดทุกรายการ';
+    }
+
+    // Top item card (by current chart metric)
+    const top = itemRows.slice().sort((a,b)=>b[itemMetric]-a[itemMetric])[0];
+    if (top){
+      document.getElementById('it-top1').textContent = top.name;
+      document.getElementById('it-top1-sub').textContent =
+        `${fmt0(top.qty)} ชิ้น • ฿${fmt(top.amount)}`;
+    } else {
+      document.getElementById('it-top1').textContent = '-';
+      document.getElementById('it-top1-sub').textContent = '-';
+    }
+
+    renderItemChart();
+    renderItemTable();
+  }
+
+  function setItemMetric(m, el){
+    itemMetric = m;
+    document.querySelectorAll('.pill[data-imetric]').forEach(p=>p.classList.replace('pill-active','pill-inactive'));
+    el.classList.replace('pill-inactive','pill-active');
+    // refresh top1 card too (depends on metric)
+    const top = itemRows.slice().sort((a,b)=>b[itemMetric]-a[itemMetric])[0];
+    if (top){
+      document.getElementById('it-top1').textContent = top.name;
+      document.getElementById('it-top1-sub').textContent = `${fmt0(top.qty)} ชิ้น • ฿${fmt(top.amount)}`;
+    }
+    renderItemChart();
+  }
+
+  // Shorten long descriptions for chart axis labels
+  function shortName(s){ return s.length>28 ? s.slice(0,27)+'…' : s; }
+
+  function renderItemChart(){
+    const ctx = document.getElementById('items-chart');
+    if (!ctx) return;
+    const TOPN = 10;
+    const top = itemRows.slice()
+      .sort((a,b)=>b[itemMetric]-a[itemMetric])
+      .slice(0, TOPN);
+
+    document.getElementById('it-chart-sub').textContent =
+      itemMetric==='amount' ? `(Top ${TOPN} ตามยอดเงิน)` : `(Top ${TOPN} ตามจำนวนชิ้น)`;
+
+    if (itemChart) itemChart.destroy();
+    if (!top.length){
+      itemChart = null;
+      const c = ctx.getContext('2d');
+      c.clearRect(0,0,ctx.width,ctx.height);
+      c.fillStyle = '#8B7355';
+      c.font = "16px 'Sarabun', sans-serif";
+      c.textAlign = 'center';
+      c.fillText('ไม่มีข้อมูลในช่วงที่เลือก', ctx.width/2, ctx.height/2);
+      return;
+    }
+    const labels = top.map(r=>shortName(r.name));
+    const values = top.map(r=>r[itemMetric]);
+    const isAmt  = itemMetric==='amount';
+    itemChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: isAmt ? 'ยอดเงิน (บาท)' : 'จำนวนชิ้น',
+          data: values,
+          backgroundColor: 'rgba(122,145,99,0.65)',
+          borderColor: '#7A9163',
+          borderWidth: 2,
+          borderRadius: 8,
+          maxBarThickness: 30,
+        }]
+      },
+      options: {
+        indexAxis: 'y',           // horizontal bars: long Thai names read better
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: items => top[items[0].dataIndex].name,   // full name in tooltip
+              label: c => isAmt ? ' ฿'+fmt(c.parsed.x) : ' '+fmt0(c.parsed.x)+' ชิ้น',
+            },
+            backgroundColor: '#6B4E2E',
+            titleFont: { family: 'Sarabun' },
+            bodyFont: { family: 'Sarabun' },
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            grid: { color:'#E4D4B5' },
+            ticks: { color:'#8B7355', font:{family:'Sarabun'}, callback: v=> isAmt ? '฿'+fmt0(v) : fmt0(v) }
+          },
+          y: { grid: { display:false }, ticks: { color:'#8B7355', font:{family:'Sarabun'} } }
+        }
+      }
+    });
+  }
+
+  function setItemSort(key){
+    if (itemSortKey === key){
+      itemSortDir = itemSortDir==='desc' ? 'asc' : 'desc';
+    } else {
+      itemSortKey = key;
+      itemSortDir = 'desc';
+    }
+    renderItemTable();
+  }
+
+  function renderItemTable(){
+    const q = (document.getElementById('it-search').value||'').toLowerCase();
+    let list = itemRows.slice();
+    if (q) list = list.filter(r=>r.name.toLowerCase().includes(q));
+
+    const dir = itemSortDir==='desc' ? -1 : 1;
+    list.sort((a,b)=>{
+      const d = (a[itemSortKey]-b[itemSortKey]) * dir;
+      return d !== 0 ? d : a.name.localeCompare(b.name);
+    });
+
+    // sort arrows
+    document.querySelectorAll('.it-arrow').forEach(s=>s.textContent='');
+    const arrow = document.querySelector(`.it-arrow[data-arrow="${itemSortKey}"]`);
+    if (arrow) arrow.textContent = itemSortDir==='desc' ? '▼' : '▲';
+
+    document.getElementById('it-tbl-count').textContent = `(${fmt0(list.length)} รายการ)`;
+
+    const tbody = document.getElementById('it-tbody');
+    if (!list.length){
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-400 py-10">ไม่พบรายการในช่วงที่เลือก</td></tr>';
+      document.getElementById('it-foot-qty').textContent = '0';
+      document.getElementById('it-foot-amount').textContent = '฿0.00';
+      return;
+    }
+    tbody.innerHTML = list.map((r,i)=>`
+      <tr>
+        <td class="text-right text-sm text-gray-400">${i+1}</td>
+        <td class="text-sm font-medium">${escapeHtml(r.name)}</td>
+        <td class="text-right text-sm">${fmt0(r.qty)}</td>
+        <td class="text-right text-sm font-medium" style="color:var(--green-d)">฿${fmt(r.amount)}</td>
+        <td class="text-right text-sm">${fmt0(r.bills)}</td>
+        <td class="text-right text-sm">฿${fmt(r.avg)}</td>
+      </tr>`).join('');
+
+    const totQty    = list.reduce((s,r)=>s+r.qty,0);
+    const totAmount = list.reduce((s,r)=>s+r.amount,0);
+    document.getElementById('it-foot-qty').textContent    = fmt0(totQty);
+    document.getElementById('it-foot-amount').textContent = '฿'+fmt(totAmount);
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  (async () => {
+    await DB.init();
+    // Default: this year, grouped by month
+    quickRange('thisYear');
+  })();
+</script>
+</body>
+</html>
