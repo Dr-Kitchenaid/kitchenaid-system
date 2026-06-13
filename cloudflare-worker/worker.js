@@ -11,8 +11,21 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
 };
 
+// ===== LINE AI chatbot config =====
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+const LINE_PERSONA = `คุณคือผู้ช่วยตอบแชทร้านซ่อม KitchenAid 'Dr.KitchenAid Service'
+ตอบลูกค้าโดยใช้ข้อมูลใน KNOWLEDGE BASE ด้านล่างเท่านั้น ห้ามมั่ว
+ทำตามกฎ System Prompt + กฎส่งต่อคน + flow ราคา ที่ระบุใน KB เคร่งครัด
+ตอบกระชับ สุภาพ ลงท้าย 'ครับ'
+
+สำคัญ: ตอบกลับเป็น JSON เท่านั้น รูปแบบ:
+{"reply":"<ข้อความที่จะส่งให้ลูกค้า>","escalate":<true ถ้าต้องส่งต่อแอดมินตามกฎส่งต่อคน ไม่งั้น false>,"reason":"<เหตุผลสั้นๆ ถ้า escalate>"}
+ห้ามมีข้อความนอก JSON`;
+const HUMAN_HANDOFF_TTL = 6 * 60 * 60; // 6 ชม. — หลัง escalate บอตเงียบให้แอดมินคุย
+const LINE_HIST_MAX = 10;
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
@@ -48,6 +61,25 @@ export default {
         }
       }
       return new Response('EVENT_RECEIVED', { status: 200 });
+    }
+
+    // LINE webhook — receive + AI auto-reply
+    if (request.method === 'POST' && url.pathname === '/line/webhook') {
+      const bodyText = await request.text();
+      const sig = request.headers.get('x-line-signature') || '';
+      if (!(await verifyLineSignature(bodyText, sig, env.CHANNEL_SECRET))) {
+        return new Response('Bad signature', { status: 401 });
+      }
+      const body = JSON.parse(bodyText || '{}');
+      // process events; use waitUntil so we ACK fast แต่ยังประมวลผลต่อ
+      const work = (async () => {
+        for (const ev of (body.events || [])) {
+          try { await handleLineEvent(env, ev); }
+          catch (e) { console.log('line event error', e && e.message); }
+        }
+      })();
+      if (ctx && ctx.waitUntil) ctx.waitUntil(work); else await work;
+      return new Response('OK', { status: 200 });
     }
 
     // ---- API endpoints — ต้องใส่ X-API-Key header ----
@@ -322,4 +354,163 @@ async function saveMessage(env, { senderId, text, timestamp, from }) {
   else convs.unshift(conv);
   convs.sort((a, b) => b.lastTime - a.lastTime);
   await env.KV.put('conversations', JSON.stringify(convs));
+}
+
+// ===================== LINE AI chatbot =====================
+
+// ตรวจ signature ของ LINE (HMAC-SHA256 ของ body ด้วย channel secret → base64)
+async function verifyLineSignature(body, signature, secret) {
+  if (!signature || !secret) return false;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
+  const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
+  return expected === signature;
+}
+
+// ออก LINE access token ผ่าน client_credentials + cache ใน KV (อายุ token ~30 วัน, cache ~25 วัน)
+async function getLineToken(env) {
+  const cached = await env.KV.get('line_token', 'json');
+  if (cached && cached.exp > Date.now()) return cached.token;
+  const r = await fetch('https://api.line.me/v2/oauth/accessToken', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=client_credentials&client_id=${env.CHANNEL_ID}&client_secret=${env.CHANNEL_SECRET}`,
+  });
+  const d = await r.json();
+  if (!d.access_token) throw new Error('line token issue failed: ' + JSON.stringify(d));
+  const ttlMs = ((d.expires_in || 2592000) - 432000) * 1000; // ลบ 5 วันกันหมดอายุระหว่างใช้
+  await env.KV.put('line_token', JSON.stringify({ token: d.access_token, exp: Date.now() + ttlMs }));
+  return d.access_token;
+}
+
+// ตอบกลับ LINE ด้วย reply token (ฟรี ไม่กิน quota)
+async function lineReply(env, replyToken, text) {
+  const token = await getLineToken(env);
+  await fetch('https://api.line.me/v2/bot/message/reply', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ replyToken, messages: [{ type: 'text', text: String(text).slice(0, 4900) }] }),
+  });
+}
+
+// ดึงชื่อลูกค้า LINE
+async function lineProfile(env, userId) {
+  try {
+    const token = await getLineToken(env);
+    const r = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (r.ok) { const d = await r.json(); return d.displayName || userId.slice(-6); }
+  } catch (_) {}
+  return userId.slice(-6);
+}
+
+// แจ้งต้นทาง Telegram
+async function sendTelegram(env, text) {
+  if (!env.TELEGRAM_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+  await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+  });
+}
+
+// เรียก Claude → ได้ {reply, escalate, reason}
+async function callClaude(env, kb, history, userText) {
+  const system = LINE_PERSONA + '\n\n===== KNOWLEDGE BASE =====\n' + kb;
+  const messages = [...history, { role: 'user', content: userText }];
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 1024, system, messages }),
+  });
+  const d = await r.json();
+  const raw = (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+  // parse JSON (ดึง {...} ก้อนแรก เผื่อมี text ห่อ)
+  let parsed = null;
+  try {
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (m) parsed = JSON.parse(m[0]);
+  } catch (_) {}
+  if (parsed && typeof parsed.reply === 'string') {
+    return { reply: parsed.reply, escalate: !!parsed.escalate, reason: parsed.reason || '' };
+  }
+  // fallback: ส่ง raw เป็นคำตอบ ไม่ escalate
+  return { reply: raw || 'รบกวนสอบถามใหม่อีกครั้งนะครับ', escalate: false, reason: '' };
+}
+
+// จัดการ event เดียวจาก LINE
+async function handleLineEvent(env, ev) {
+  if (ev.type !== 'message') return;
+  const userId = ev.source && ev.source.userId;
+  const replyToken = ev.replyToken;
+  if (!userId || !replyToken) return;
+
+  // ข้อความที่ไม่ใช่ text (รูป/สติกเกอร์/ไฟล์)
+  if (ev.message.type !== 'text') {
+    const handoff = await env.KV.get(`line_human_${userId}`);
+    if (handoff) { await forwardToAdmin(env, userId, '[ส่งรูป/ไฟล์]'); return; }
+    await lineReply(env, replyToken,
+      'รับข้อมูลแล้วครับ รบกวนพิมพ์รุ่นเครื่อง (ป้ายใต้เครื่อง) + อาการ มาด้วยนะครับ จะได้ประเมินให้ตรง');
+    await pushHist(env, userId, 'user', '[ลูกค้าส่งรูป/ไฟล์]');
+    return;
+  }
+
+  const text = ev.message.text;
+
+  // ถ้าอยู่โหมด human handoff → บอตเงียบ แค่ส่งต่อแอดมิน ไม่ตอบเอง
+  const handoff = await env.KV.get(`line_human_${userId}`);
+  if (handoff) {
+    await forwardToAdmin(env, userId, text);
+    await pushHist(env, userId, 'user', text);
+    return;
+  }
+
+  const kb = await env.KV.get('kb_chatbot');
+  if (!kb) { await lineReply(env, replyToken, 'ขอโทษครับ ระบบกำลังปรับปรุง รบกวนทักใหม่ภายหลังครับ'); return; }
+
+  const history = (await env.KV.get(`line_hist_${userId}`, 'json')) || [];
+  const out = await callClaude(env, kb, history, text);
+
+  await lineReply(env, replyToken, out.reply);
+  await pushHist(env, userId, 'user', text);
+  await pushHist(env, userId, 'assistant', out.reply);
+
+  if (out.escalate) {
+    await env.KV.put(`line_human_${userId}`, '1', { expirationTtl: HUMAN_HANDOFF_TTL });
+    const name = await lineProfile(env, userId);
+    await sendTelegram(env,
+      `🔔 <b>LINE ต้องแอดมินดู</b>\n` +
+      `👤 ${escapeHtml(name)}\n` +
+      `💬 ลูกค้า: ${escapeHtml(text)}\n` +
+      `📌 เหตุผล: ${escapeHtml(out.reason || '-')}\n` +
+      `🤖 บอตตอบ: ${escapeHtml(out.reply)}\n\n` +
+      `บอตจะเงียบ 6 ชม. ให้ต้นเข้าไปคุยใน LINE OA ได้เลย`);
+  }
+}
+
+// ส่งข้อความลูกค้าให้แอดมิน (ระหว่างโหมด handoff)
+async function forwardToAdmin(env, userId, text) {
+  const name = await lineProfile(env, userId);
+  await sendTelegram(env, `💬 <b>${escapeHtml(name)}</b> (LINE): ${escapeHtml(text)}`);
+}
+
+// เก็บประวัติบทสนทนา (เก็บ LINE_HIST_MAX ข้อความล่าสุด) สำหรับ context multi-turn
+async function pushHist(env, userId, role, content) {
+  const key = `line_hist_${userId}`;
+  const hist = (await env.KV.get(key, 'json')) || [];
+  hist.push({ role, content });
+  if (hist.length > LINE_HIST_MAX) hist.splice(0, hist.length - LINE_HIST_MAX);
+  await env.KV.put(key, JSON.stringify(hist), { expirationTtl: 7 * 24 * 60 * 60 });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
