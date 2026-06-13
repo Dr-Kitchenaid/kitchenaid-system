@@ -270,6 +270,7 @@
       <p class="text-sm text-gray-500 mt-0.5">จัดการอะไหล่และสินค้าคงคลัง</p>
     </div>
     <div class="flex gap-2">
+      <button class="btn btn-secondary" onclick="printStockCount()"><svg class="ic"><use href="#i-print"/></svg> พิมพ์ใบนับสต็อก</button>
       <button class="btn btn-secondary" onclick="document.getElementById('csv-file-input').click()"><svg class="ic"><use href="#i-folder"/></svg> นำเข้า CSV</button>
       <input type="file" id="csv-file-input" accept=".csv,.txt,.tsv" style="display:none" onchange="handleCsvFile(this)">
       <button class="btn btn-primary" onclick="openPartModal()">+ เพิ่มอะไหล่ใหม่</button>
@@ -799,6 +800,123 @@ function confirmAdj(){
 }
 
 (async () => { await DB.init(); buildCatPills(); renderStock(); })();
+
+// ---- Print Stock Count Sheet ----
+function printStockCount(){
+  const parts = DB.getParts();
+  if(!parts.length){ alert('ยังไม่มีข้อมูลสต็อก'); return; }
+
+  // group by category
+  const groups = {};
+  parts.forEach(p=>{
+    const c = (p.category||'').trim() || 'ไม่ระบุหมวดหมู่';
+    (groups[c]=groups[c]||[]).push(p);
+  });
+  const catNames = Object.keys(groups).sort((a,b)=>a.localeCompare(b,'th'));
+
+  const now   = new Date();
+  const dateStr = now.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  const timeStr = now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+
+  let totalItems = 0, totalQty = 0;
+  let body = '';
+  catNames.forEach(cat=>{
+    const rows = groups[cat].sort((a,b)=>((a.code||'')+(a.name||'')).localeCompare((b.code||'')+(b.name||''),'th'));
+    const catQty = rows.reduce((s,p)=>s+(p.stock||0),0);
+    totalItems += rows.length;
+    totalQty   += catQty;
+    body += `<div class="cat">
+      <div class="cat-head">${cat} <span class="cat-meta">(${rows.length} รายการ / รวมในระบบ ${catQty} ชิ้น)</span></div>
+      <table>
+        <thead><tr>
+          <th class="c-no">#</th>
+          <th class="c-code">รหัส</th>
+          <th class="c-name">ชื่ออะไหล่</th>
+          <th class="c-unit">หน่วย</th>
+          <th class="c-sys">คงเหลือ<br>ในระบบ</th>
+          <th class="c-real">นับจริง</th>
+          <th class="c-diff">ผลต่าง</th>
+          <th class="c-note">หมายเหตุ</th>
+        </tr></thead>
+        <tbody>
+        ${rows.map((p,i)=>`<tr>
+          <td class="c-no">${i+1}</td>
+          <td class="c-code">${p.code||'-'}</td>
+          <td class="c-name">${p.name||''}</td>
+          <td class="c-unit">${p.unit||'ชิ้น'}</td>
+          <td class="c-sys">${p.stock||0}</td>
+          <td class="c-real"></td>
+          <td class="c-diff"></td>
+          <td class="c-note"></td>
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  });
+
+  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
+  <title>ใบนับสต็อกอะไหล่ - KitchenAid</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:'Sarabun','TH Sarabun New',Tahoma,sans-serif;margin:0;padding:16px;color:#111;font-size:13px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #b91c1c;padding-bottom:8px;margin-bottom:6px}
+    .top h1{margin:0;font-size:20px;color:#b91c1c}
+    .top .sub{font-size:12px;color:#555;margin-top:2px}
+    .meta{font-size:12px;text-align:right;color:#333}
+    .signrow{display:flex;gap:24px;font-size:12px;margin:8px 0 14px}
+    .signrow .f{flex:1}
+    .signrow .line{border-bottom:1px dotted #999;height:18px;margin-top:2px}
+    .cat{margin-bottom:14px;break-inside:avoid}
+    .cat-head{background:#fee2e2;border-left:4px solid #b91c1c;padding:5px 8px;font-weight:700;font-size:14px;margin-bottom:0}
+    .cat-meta{font-weight:400;font-size:11px;color:#777}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #999;padding:4px 6px;font-size:12px}
+    th{background:#f3f4f6;text-align:center;font-size:11px;line-height:1.15}
+    .c-no{width:32px;text-align:center}
+    .c-code{width:90px;font-family:monospace}
+    .c-name{text-align:left}
+    .c-unit{width:48px;text-align:center}
+    .c-sys{width:60px;text-align:center}
+    .c-real{width:64px;background:#fffbeb}
+    .c-diff{width:60px}
+    .c-note{width:110px}
+    tbody tr{height:26px}
+    .foot{margin-top:10px;font-size:12px;color:#444;border-top:1px solid #ccc;padding-top:6px}
+    @media print{
+      body{padding:0}
+      .noprint{display:none}
+      @page{margin:12mm}
+    }
+    .noprint{text-align:center;margin-bottom:12px}
+    .noprint button{font-size:14px;padding:8px 20px;background:#b91c1c;color:#fff;border:none;border-radius:6px;cursor:pointer}
+  </style></head><body>
+  <div class="noprint"><button onclick="window.print()">🖨️ พิมพ์ / Print</button></div>
+  <div class="top">
+    <div>
+      <h1>ใบนับสต็อกอะไหล่</h1>
+      <div class="sub">KitchenAid Service — Stock Count Sheet</div>
+    </div>
+    <div class="meta">
+      วันที่พิมพ์: ${dateStr} ${timeStr}<br>
+      รวม ${totalItems} รายการ / ${catNames.length} หมวดหมู่<br>
+      ยอดในระบบรวม ${totalQty.toLocaleString('th-TH')} ชิ้น
+    </div>
+  </div>
+  <div class="signrow">
+    <div class="f">ผู้ตรวจนับ: <span class="line"></span></div>
+    <div class="f">ผู้ตรวจสอบ: <span class="line"></span></div>
+    <div class="f">วันที่นับ: <span class="line"></span></div>
+  </div>
+  ${body}
+  <div class="foot">หมายเหตุ: "ผลต่าง" = นับจริง − คงเหลือในระบบ (กรอกเมื่อพบไม่ตรง)</div>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  if(!w){ alert('เบราว์เซอร์บล็อก popup — อนุญาต popup แล้วลองใหม่'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
 
 // ---- CSV Import ----
 let csvParsedRows = [];

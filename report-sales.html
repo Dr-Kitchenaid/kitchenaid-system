@@ -11,6 +11,8 @@
     .it-sortable{cursor:pointer;user-select:none;white-space:nowrap}
     .it-sortable:hover{color:var(--green-d)}
     .it-arrow{font-size:.8em;color:var(--green-d)}
+    .item-link{cursor:pointer;color:#2563eb;text-decoration:underline;text-underline-offset:2px;text-decoration-style:dotted}
+    .item-link:hover{color:#1d4ed8;text-decoration-style:solid}
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -396,6 +398,35 @@
 
 </main>
 
+<!-- Item → Bills Modal -->
+<div id="item-bills-modal" class="modal-bg" style="display:none" onclick="if(event.target===this)closeItemBills()">
+  <div class="modal-box" style="max-width:780px;width:95%">
+    <div class="modal-head">
+      <h3><svg class="ic"><use href="#i-receipt"/></svg> บิลที่มีรายการ: <span id="ib-name" class="text-red-700"></span></h3>
+      <button onclick="closeItemBills()" class="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="ib-summary" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm mb-3"></div>
+      <div class="tbl-wrap" style="max-height:58vh;overflow:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>เลขที่</th>
+              <th>วันที่</th>
+              <th>ลูกค้า</th>
+              <th>สถานะ</th>
+              <th class="text-right">จำนวน</th>
+              <th class="text-right">ยอด</th>
+              <th class="text-center">บิล</th>
+            </tr>
+          </thead>
+          <tbody id="ib-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="js/db.js"></script>
 <script>
   const fmt = (n,d=2)=>Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -645,25 +676,42 @@
 
   // Aggregate items across scopedInvoices (already filtered by date range + basis).
   function aggregateItems(){
-    const map = new Map();   // normName -> {name, qty, amount, bills:Set}
+    const map = new Map();   // normName -> {name, qty, amount, entries:[]}
     for (const inv of scopedInvoices){
       const items = Array.isArray(inv.items) ? inv.items : [];
+      // merge duplicate lines of the same item within one bill
+      const perInv = new Map();   // name -> {qty, amount}
       for (const it of items){
         if (!it) continue;
         const name = normDesc(it.description);
+        let pe = perInv.get(name);
+        if (!pe){ pe = { qty:0, amount:0 }; perInv.set(name, pe); }
+        pe.qty    += Number(it.qty||0);
+        pe.amount += Number(it.amount||0);
+      }
+      for (const [name, pe] of perInv){
         let e = map.get(name);
-        if (!e){ e = { name, qty:0, amount:0, bills:new Set() }; map.set(name, e); }
-        e.qty    += Number(it.qty||0);
-        e.amount += Number(it.amount||0);
-        e.bills.add(inv.id);
+        if (!e){ e = { name, qty:0, amount:0, entries:[] }; map.set(name, e); }
+        e.qty    += pe.qty;
+        e.amount += pe.amount;
+        e.entries.push({
+          id: inv.id,
+          number: inv.number || '-',
+          customerName: inv.customerName || '-',
+          date: basisDate(inv),
+          status: inv.status,
+          qty: pe.qty,
+          amount: pe.amount,
+        });
       }
     }
     return [...map.values()].map(e=>({
       name: e.name,
       qty: e.qty,
       amount: e.amount,
-      bills: e.bills.size,
+      bills: e.entries.length,
       avg: e.qty ? e.amount/e.qty : 0,
+      entries: e.entries,
     }));
   }
 
@@ -823,7 +871,7 @@
     tbody.innerHTML = list.map((r,i)=>`
       <tr>
         <td class="text-right text-sm text-gray-400">${i+1}</td>
-        <td class="text-sm font-medium">${escapeHtml(r.name)}</td>
+        <td class="text-sm font-medium"><a class="item-link" onclick="showItemBills(${itemRows.indexOf(r)})" title="ดูบิล/ลูกค้าที่มีรายการนี้">${escapeHtml(r.name)}</a></td>
         <td class="text-right text-sm">${fmt0(r.qty)}</td>
         <td class="text-right text-sm font-medium" style="color:var(--green-d)">฿${fmt(r.amount)}</td>
         <td class="text-right text-sm">${fmt0(r.bills)}</td>
@@ -839,6 +887,32 @@
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+
+  // ---- Item → Bills drill-down ----
+  function showItemBills(idx){
+    const r = itemRows[idx];
+    if (!r) return;
+    document.getElementById('ib-name').textContent = r.name;
+    document.getElementById('ib-summary').innerHTML =
+      `รวม <b>${fmt0(r.bills)}</b> บิล &nbsp;|&nbsp; <b>${fmt0(r.qty)}</b> ชิ้น &nbsp;|&nbsp; ยอดรวม <b style="color:var(--green-d)">฿${fmt(r.amount)}</b>`;
+    const rows = r.entries.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    document.getElementById('ib-tbody').innerHTML = rows.map(e=>`
+      <tr>
+        <td class="font-mono text-sm text-blue-600">${escapeHtml(e.number)}</td>
+        <td class="text-sm">${fmtDate(e.date)}</td>
+        <td class="text-sm font-medium">${escapeHtml(e.customerName)}</td>
+        <td>${badge(e.status)}</td>
+        <td class="text-right text-sm">${fmt0(e.qty)}</td>
+        <td class="text-right text-sm font-medium" style="color:var(--green-d)">฿${fmt(e.amount)}</td>
+        <td class="text-center"><a href="invoice.html?id=${encodeURIComponent(e.id)}" class="btn btn-secondary btn-xs">เปิดบิล</a></td>
+      </tr>`).join('');
+    document.getElementById('item-bills-modal').style.display = 'flex';
+  }
+
+  function closeItemBills(){
+    document.getElementById('item-bills-modal').style.display = 'none';
+  }
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeItemBills(); });
 
   (async () => {
     await DB.init();
