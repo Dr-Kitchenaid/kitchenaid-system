@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงานกำไร - KitchenAid</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="i-mixer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h10l1 5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4z"/><path d="M9 13v3"/><path d="M14 13v3"/><rect x="6" y="16" width="11" height="4" rx="1.2"/><circle cx="11.5" cy="8" r="0.8" fill="currentColor"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.8 0 5 2.2 5 5"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3.5a4.5 4.5 0 0 0-5.7 5.7L3 16l4 4 6.8-6.8a4.5 4.5 0 0 0 5.7-5.7L17 6l-2-2-2 2z"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8 12h8"/><path d="M8 16h8"/><path d="M8 8h3"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L5 21z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><circle cx="9" cy="11" r="0.9" fill="currentColor"/><circle cx="12" cy="11" r="0.9" fill="currentColor"/><circle cx="15" cy="11" r="0.9" fill="currentColor"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M22 12h-3M5 12H2M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05L4.93 4.93"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7v10"/><path d="M15 9.5c0-1.4-1.3-2-3-2s-3 .6-3 2 1.3 2 3 2 3 .6 3 2-1.3 2-3 2-3-.6-3-2"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M7 17v-5M11 17V9M15 17v-3M19 17V7"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5"/><circle cx="12" cy="18" r="0.8" fill="currentColor"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="1"/><rect x="7" y="14" width="10" height="6" rx="0.5"/><circle cx="17" cy="12" r="0.8" fill="currentColor"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r="0.9" fill="currentColor"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+</svg>
+
+
+<nav class="bg-red-700 text-white shadow-lg no-print sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between h-14">
+      <a href="index.html" class="flex items-center gap-2 font-bold text-lg text-white no-underline">
+        <span id="nav-icon" class="text-2xl"><svg class="ic"><use href="#i-mixer"/></svg></span><img id="nav-logo" style="height:32px;display:none;border-radius:4px;object-fit:contain" alt="logo"><span>KitchenAid</span>
+      </a>
+      <div class="hidden md:flex gap-1">
+        <a href="index.html"      class="nav-link"><svg class="ic"><use href="#i-home"/></svg> แดชบอร์ด</a>
+        <a href="customer-history.html" class="nav-link"><svg class="ic"><use href="#i-users"/></svg> ประวัติลูกค้า</a>
+        <a href="repair.html"     class="nav-link"><svg class="ic"><use href="#i-wrench"/></svg> รับเครื่องซ่อม</a>
+        <a href="quotation.html"  class="nav-link"><svg class="ic"><use href="#i-doc"/></svg> ใบเสนอราคา</a>
+        <a href="invoice.html"    class="nav-link"><svg class="ic"><use href="#i-receipt"/></svg> บิล</a>
+        <a href="report-sales.html" class="nav-link"><svg class="ic"><use href="#i-chart"/></svg> รายงานยอดขาย</a>
+        <a href="expenses.html"   class="nav-link"><svg class="ic"><use href="#i-coin"/></svg> รายจ่าย</a>
+        <a href="report-profit.html" class="nav-link active"><svg class="ic"><use href="#i-chart"/></svg> กำไร</a>
+        <a href="stock.html"      class="nav-link"><svg class="ic"><use href="#i-box"/></svg> สต็อก</a>
+        <a href="inbox.html"      class="nav-link"><svg class="ic"><use href="#i-chat"/></svg> Inbox</a>
+        <a href="settings.html"   class="nav-link"><svg class="ic"><use href="#i-gear"/></svg> ตั้งค่า</a>
+      </div>
+      <button onclick="document.getElementById('mnav').classList.toggle('hidden')" class="md:hidden p-2 rounded hover:bg-red-600"><svg class="ic"><use href="#i-menu"/></svg></button>
+    </div>
+    <div id="mnav" class="hidden md:hidden border-t border-red-600 py-2">
+      <a href="index.html"     class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-home"/></svg> แดชบอร์ด</a>
+      <a href="customer-history.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-users"/></svg> ประวัติลูกค้า</a>
+      <a href="repair.html"    class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-wrench"/></svg> รับเครื่องซ่อม</a>
+      <a href="quotation.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-doc"/></svg> ใบเสนอราคา</a>
+      <a href="invoice.html"   class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-receipt"/></svg> บิล</a>
+      <a href="report-sales.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-chart"/></svg> รายงานยอดขาย</a>
+      <a href="expenses.html"  class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-coin"/></svg> รายจ่าย</a>
+      <a href="report-profit.html" class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-chart"/></svg> กำไร</a>
+      <a href="stock.html"     class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-box"/></svg> สต็อก</a>
+      <a href="inbox.html"     class="block py-2 px-3 rounded hover:bg-red-600 mb-1"><svg class="ic"><use href="#i-chat"/></svg> Inbox</a>
+      <a href="settings.html"  class="block py-2 px-3 rounded hover:bg-red-600"><svg class="ic"><use href="#i-gear"/></svg> ตั้งค่า</a>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900"><svg class="ic"><use href="#i-chart"/></svg> รายงานกำไร</h1>
+      <p class="text-sm text-gray-500 mt-0.5">รายรับ − รายจ่าย = กำไรสุทธิ (cash basis — เงินเข้า/ออกจริงในเดือน)</p>
+    </div>
+    <div class="flex gap-2 no-print">
+      <button class="btn btn-secondary btn-sm" onclick="exportCsv()"><svg class="ic"><use href="#i-down"/></svg> Export CSV</button>
+      <button class="btn btn-info btn-sm" onclick="window.print()"><svg class="ic"><use href="#i-print"/></svg> พิมพ์</button>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="card mb-4 no-print">
+    <div class="p-4 flex flex-wrap gap-4 items-end">
+      <div>
+        <label class="form-label">เดือน</label>
+        <input id="f-month" class="form-input" type="month" style="max-width:180px" onchange="render()">
+      </div>
+      <div>
+        <label class="form-label">นับรายรับ</label>
+        <select id="f-basis" class="form-input" style="max-width:240px" onchange="render()">
+          <option value="paid">เงินเข้าจริง (บิลที่ชำระแล้ว ตามวันรับเงิน)</option>
+          <option value="all">ยอดบิลทั้งหมด (ตามวันที่บิล)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- cash-basis note -->
+  <div class="card mb-4" style="background:#fffbeb;border-color:#fde68a">
+    <div class="p-3 text-sm text-gray-700 flex gap-2">
+      <svg class="ic" style="flex:none;color:#d97706"><use href="#i-info"/></svg>
+      <div>
+        วิธีคิด <b>cash basis</b>: นับเงินสดที่เข้า/ออกจริงในเดือนนั้น —
+        <u>ไม่ใช่</u> accrual และ <u>ไม่ได้</u> คิด COGS ต่อการขายแต่ละครั้ง.
+        ต้นทุนสินค้า/อะไหล่นับ <b>เมื่อจ่ายเงินซื้อของจริง</b> ผ่านหน้า "รายจ่าย" (หมวด "ต้นทุนสินค้า/อะไหล่")
+        — การรับของเข้าสต็อกไม่สร้างรายจ่ายอัตโนมัติ (เลี่ยงนับซ้ำ).
+        ถ้าต้องยื่นภาษีนิติบุคคลในอนาคต ค่อยปรับเป็น accrual/COGS-per-sale.
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 summary blocks -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="stat-card">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="stat-lbl">รายรับรวม</div>
+          <div class="stat-val mt-1 text-green-600" id="s-income" style="font-size:1.5rem">฿0</div>
+        </div>
+        <div class="stat-icon bg-green-100"><svg class="ic"><use href="#i-coin"/></svg></div>
+      </div>
+      <div class="text-xs text-gray-400 mt-3" id="s-income-sub">จากบิล</div>
+    </div>
+    <div class="stat-card">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="stat-lbl">รายจ่ายรวม</div>
+          <div class="stat-val mt-1 text-red-600" id="s-expense" style="font-size:1.5rem">฿0</div>
+        </div>
+        <div class="stat-icon bg-red-100"><svg class="ic"><use href="#i-warn"/></svg></div>
+      </div>
+      <div class="text-xs text-gray-400 mt-3" id="s-expense-sub">จากหน้ารายจ่าย</div>
+    </div>
+    <div class="stat-card">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="stat-lbl">กำไรสุทธิ</div>
+          <div class="stat-val mt-1" id="s-profit" style="font-size:1.5rem">฿0</div>
+        </div>
+        <div class="stat-icon bg-blue-100"><svg class="ic"><use href="#i-chart"/></svg></div>
+      </div>
+      <div class="text-xs text-gray-400 mt-3">รายรับ − รายจ่าย</div>
+    </div>
+  </div>
+
+  <!-- Chart 6-12 months -->
+  <div class="card mb-6">
+    <div class="card-header"><span><svg class="ic"><use href="#i-chart"/></svg> รายรับ / รายจ่าย / กำไร ย้อนหลัง 12 เดือน</span></div>
+    <div class="p-4">
+      <div style="position:relative;height:340px"><canvas id="pl-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Expense by category -->
+  <div class="card">
+    <div class="card-header"><span><svg class="ic"><use href="#i-coin"/></svg> รายจ่ายแยกหมวด <span id="cat-month" class="text-sm font-normal text-gray-400"></span></span></div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>หมวดรายจ่าย</th>
+            <th class="text-right" style="width:120px">จำนวนรายการ</th>
+            <th class="text-right" style="width:160px">ยอดรวม</th>
+          </tr>
+        </thead>
+        <tbody id="cat-tbody">
+          <tr><td colspan="3" class="text-center text-gray-400 py-10">กำลังโหลด...</td></tr>
+        </tbody>
+        <tfoot>
+          <tr class="font-bold" style="background:var(--cream-light)">
+            <td class="text-right" style="padding:11px 14px">รวมรายจ่าย</td>
+            <td class="text-right" id="cat-foot-cnt" style="padding:11px 14px">0</td>
+            <td class="text-right" id="cat-foot-sum" style="padding:11px 14px;color:#b91c1c">฿0.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script src="js/db.js"></script>
+<script>
+  const fmt  = (n,d=2)=>Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmt0 = n=>Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0});
+
+  let chart = null;
+
+  // --- INCOME basis (เลียนสูตร report-sales.html ให้ตรง field/date) ---
+  // basis 'paid' = cash basis จริง: นับเฉพาะบิลที่ชำระแล้ว ตามวันรับเงิน (paidAt) → เงินเข้าจริง
+  // basis 'all'  = ตามวันที่บิล (inv.date) ทุกสถานะ (ยอดที่ออกบิล ไม่ใช่เงินสดจริง)
+  function basisDate(inv){
+    const basis = document.getElementById('f-basis').value;
+    const billDate = inv.date || (inv.createdAt ? inv.createdAt.slice(0,10) : null);
+    if (basis === 'paid'){
+      if (inv.status !== 'paid') return null;
+      return inv.paidAt || billDate;   // paid แต่ไม่มี paidAt → ใช้วันบิลแทน เพื่อไม่ให้ยอดหาย
+    }
+    return billDate;
+  }
+
+  function monthOf(d){ return (d||'').slice(0,7); }
+
+  // รายรับของเดือนที่เลือก = sum(inv.total) ของบิลที่ basisDate อยู่ในเดือนนั้น
+  function incomeForMonth(month){
+    let sum = 0;
+    for (const inv of DB.getInvoices()){
+      const d = basisDate(inv);
+      if (d && monthOf(d) === month) sum += (inv.total||0);
+    }
+    return sum;
+  }
+
+  function expensesForMonth(month){
+    return DB.getExpenses().filter(e=>monthOf(e.date)===month);
+  }
+
+  function thaiMonthLabel(month){
+    const [yy,mm] = month.split('-');
+    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return months[Number(mm)-1] + ' ' + (Number(yy)+543).toString().slice(-2);
+  }
+
+  function render(){
+    const month = document.getElementById('f-month').value;
+    const basis = document.getElementById('f-basis').value;
+    if (!month) return;
+
+    const income  = incomeForMonth(month);
+    const exps    = expensesForMonth(month);
+    const expSum  = exps.reduce((s,e)=>s+(Number(e.amount)||0),0);
+    const profit  = income - expSum;
+
+    document.getElementById('s-income').textContent  = '฿'+fmt(income);
+    document.getElementById('s-expense').textContent = '฿'+fmt(expSum);
+    const pEl = document.getElementById('s-profit');
+    pEl.textContent = (profit<0?'-฿':'฿')+fmt(Math.abs(profit));
+    pEl.className = 'stat-val mt-1 ' + (profit<0 ? 'text-red-600' : 'text-green-600');
+
+    document.getElementById('s-income-sub').textContent =
+      basis==='paid' ? 'บิลชำระแล้ว (ตามวันรับเงิน)' : 'ยอดบิลทั้งหมด (ตามวันที่บิล)';
+    document.getElementById('cat-month').textContent = '('+thaiMonthLabel(month)+')';
+
+    renderCatTable(exps);
+    renderChart(month);
+  }
+
+  function renderCatTable(exps){
+    // รวมยอดแยกหมวด
+    const map = new Map();   // category -> {cnt, sum}
+    for (const e of exps){
+      const cat = e.category || 'อื่นๆ';
+      let r = map.get(cat);
+      if (!r){ r = { cnt:0, sum:0 }; map.set(cat, r); }
+      r.cnt += 1;
+      r.sum += (Number(e.amount)||0);
+    }
+    const rows = [...map.entries()].sort((a,b)=>b[1].sum-a[1].sum);
+
+    const tbody = document.getElementById('cat-tbody');
+    if (!rows.length){
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-400 py-10">ไม่มีรายจ่ายในเดือนนี้</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(([cat,r])=>`
+        <tr>
+          <td class="text-sm font-medium">${escapeHtml(cat)}</td>
+          <td class="text-right text-sm text-gray-500">${fmt0(r.cnt)}</td>
+          <td class="text-right text-sm font-medium" style="color:#b91c1c">฿${fmt(r.sum)}</td>
+        </tr>`).join('');
+    }
+    const totCnt = rows.reduce((s,[,r])=>s+r.cnt,0);
+    const totSum = rows.reduce((s,[,r])=>s+r.sum,0);
+    document.getElementById('cat-foot-cnt').textContent = fmt0(totCnt);
+    document.getElementById('cat-foot-sum').textContent = '฿'+fmt(totSum);
+  }
+
+  function lastNMonths(n, endMonth){
+    // endMonth = 'YYYY-MM'; return array oldest→newest
+    const [yy,mm] = endMonth.split('-').map(Number);
+    const out = [];
+    for (let i=n-1; i>=0; i--){
+      const d = new Date(yy, mm-1-i, 1);
+      out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+    return out;
+  }
+
+  function renderChart(month){
+    const months = lastNMonths(12, month);
+    const incomes  = months.map(m=>incomeForMonth(m));
+    const expenses = months.map(m=>expensesForMonth(m).reduce((s,e)=>s+(Number(e.amount)||0),0));
+    const profits  = months.map((m,i)=>incomes[i]-expenses[i]);
+    const labels   = months.map(thaiMonthLabel);
+
+    const ctx = document.getElementById('pl-chart');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label:'รายรับ', data:incomes,  backgroundColor:'rgba(122,145,99,0.65)',  borderColor:'#7A9163', borderWidth:1, borderRadius:6, maxBarThickness:22 },
+          { label:'รายจ่าย', data:expenses, backgroundColor:'rgba(220,38,38,0.55)',   borderColor:'#b91c1c', borderWidth:1, borderRadius:6, maxBarThickness:22 },
+          { label:'กำไร',   data:profits,  type:'line', borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.1)', borderWidth:2, tension:0.25, pointRadius:3, pointBackgroundColor:'#2563eb', fill:false },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{ labels:{ font:{family:'Sarabun'}, color:'#6B4E2E' } },
+          tooltip:{
+            callbacks:{ label: c => ` ${c.dataset.label}: ฿`+fmt(c.parsed.y) },
+            backgroundColor:'#6B4E2E', titleFont:{family:'Sarabun'}, bodyFont:{family:'Sarabun'},
+          }
+        },
+        scales:{
+          x:{ grid:{display:false}, ticks:{ color:'#8B7355', font:{family:'Sarabun'} } },
+          y:{ beginAtZero:true, grid:{color:'#E4D4B5'}, ticks:{ color:'#8B7355', font:{family:'Sarabun'}, callback:v=>'฿'+fmt0(v) } }
+        }
+      }
+    });
+  }
+
+  // CSV: วันที่, ประเภท(รับ/จ่าย), หมวด, รายละเอียด, จำนวนเงิน — เปิดใน Excel (มี BOM กัน Thai เพี้ยน)
+  function exportCsv(){
+    const month = document.getElementById('f-month').value;
+    if (!month){ alert('เลือกเดือนก่อน'); return; }
+
+    const rows = [];
+    // รายรับ: บิลในเดือน (ตาม basis)
+    for (const inv of DB.getInvoices()){
+      const d = basisDate(inv);
+      if (d && monthOf(d) === month){
+        rows.push([ d, 'รับ', 'ยอดขาย/ซ่อม', `บิล ${inv.number||inv.id} ${inv.customerName||''}`.trim(), Number(inv.total||0) ]);
+      }
+    }
+    // รายจ่าย
+    for (const e of expensesForMonth(month)){
+      rows.push([ e.date||'', 'จ่าย', e.category||'', e.description||'', -Number(e.amount||0) ]);
+    }
+    rows.sort((a,b)=>(a[0]||'').localeCompare(b[0]||''));
+
+    const header = ['วันที่','ประเภท','หมวด','รายละเอียด','จำนวนเงิน'];
+    const esc = v => {
+      const s = String(v==null?'':v);
+      return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+    };
+    let csv = header.map(esc).join(',') + '\r\n';
+    csv += rows.map(r=>r.map(esc).join(',')).join('\r\n');
+
+    const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8;' });  // BOM กัน Thai เพี้ยนใน Excel
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `profit_${month}.csv`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  (async () => {
+    await DB.init();
+    const d = new Date();
+    document.getElementById('f-month').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    render();
+  })();
+</script>
+</body>
+</html>

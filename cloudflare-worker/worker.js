@@ -43,22 +43,29 @@ export default {
       return new Response('Forbidden', { status: 403 });
     }
 
-    // Facebook webhook — receive messages
+    // Facebook webhook — receive messages + AI auto-reply
     if (request.method === 'POST' && url.pathname === '/webhook') {
-      const body = await request.json().catch(() => ({}));
+      const bodyText = await request.text();
+      // verify X-Hub-Signature-256 ถ้าตั้ง APP_SECRET ไว้ (กันคนยิงมั่ว) — ไม่ตั้งก็ข้าม (backward compat)
+      if (env.APP_SECRET) {
+        const sig = request.headers.get('x-hub-signature-256') || '';
+        if (!(await verifyFbSignature(bodyText, sig, env.APP_SECRET))) {
+          return new Response('Bad signature', { status: 401 });
+        }
+      }
+      const body = JSON.parse(bodyText || '{}');
       if (body.object === 'page') {
-        for (const entry of (body.entry || [])) {
-          for (const event of (entry.messaging || [])) {
-            if (event.message && !event.message.is_echo) {
-              await saveMessage(env, {
-                senderId: event.sender.id,
-                text: event.message.text || '[สื่อ/ไฟล์แนบ]',
-                timestamp: event.timestamp,
-                from: 'customer',
-              });
+        const work = (async () => {
+          for (const entry of (body.entry || [])) {
+            for (const event of (entry.messaging || [])) {
+              if (event.message && !event.message.is_echo) {
+                try { await handleFbEvent(env, event); }
+                catch (e) { console.log('fb event error', e && e.message); }
+              }
             }
           }
-        }
+        })();
+        if (ctx && ctx.waitUntil) ctx.waitUntil(work); else await work;
       }
       return new Response('EVENT_RECEIVED', { status: 200 });
     }
@@ -112,21 +119,15 @@ export default {
       const { senderId, text } = await request.json();
       if (!senderId || !text) return json({ error: 'missing senderId or text' }, 400);
 
-      const res = await fetch(
-        `https://graph.facebook.com/v19.0/me/messages?access_token=${env.PAGE_ACCESS_TOKEN}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recipient: { id: senderId }, message: { text } }),
-        }
-      );
-
+      const res = await fbSend(env, senderId, text);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         return json({ ok: false, error: err }, 500);
       }
 
       await saveMessage(env, { senderId, text, timestamp: Date.now(), from: 'shop' });
+      // แอดมินตอบเอง → ปิดปากบอต 6 ชม. ให้คนคุยต่อ ไม่แทรก
+      await env.KV.put(`fb_human_${senderId}`, '1', { expirationTtl: HUMAN_HANDOFF_TTL });
       return json({ ok: true });
     }
 
@@ -139,25 +140,33 @@ export default {
       return json({ ok: true });
     }
 
-    // POST /image?partId=xxx&ext=jpg  body=binary  → upload to R2, return {key, url}
+    // POST /image?dir=expenses&id=xxx&ext=jpg  body=binary  → upload to R2, return {key, url}
+    // dir whitelist: parts | expenses. Backward-compat: if no `dir`, accept legacy `partId` (= dir parts).
     if (request.method === 'POST' && url.pathname === '/image') {
-      const partId = (url.searchParams.get('partId') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
-      if (!partId) return json({ error: 'missing partId' }, 400);
+      const IMG_DIRS = ['parts', 'expenses'];
+      let dir = (url.searchParams.get('dir') || '').toLowerCase();
+      let id  = (url.searchParams.get('id') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
+      if (!dir) { // legacy: ?partId=xxx (stock.html before generalize)
+        dir = 'parts';
+        id  = (url.searchParams.get('partId') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
+      }
+      if (!IMG_DIRS.includes(dir)) return json({ error: 'invalid dir' }, 400);
+      if (!id) return json({ error: 'missing id' }, 400);
       const ext = (url.searchParams.get('ext') || 'jpg').replace(/[^a-z0-9]/gi, '').slice(0, 5) || 'jpg';
       const buf = await request.arrayBuffer();
       if (buf.byteLength === 0) return json({ error: 'empty body' }, 400);
       if (buf.byteLength > 2 * 1024 * 1024) return json({ error: 'too large (max 2MB)' }, 400);
       const uuid = crypto.randomUUID();
-      const key = `parts/${partId}/${uuid}.${ext}`;
+      const key = `${dir}/${id}/${uuid}.${ext}`;
       const contentType = request.headers.get('Content-Type') || 'image/jpeg';
       await env.IMAGES.put(key, buf, { httpMetadata: { contentType } });
       return json({ ok: true, key, url: `${env.R2_PUBLIC_URL}/${key}` });
     }
 
-    // DELETE /image?key=parts/xxx/yyy.jpg
+    // DELETE /image?key=parts/xxx/yyy.jpg  (whitelist prefix: parts/ | expenses/)
     if (request.method === 'DELETE' && url.pathname === '/image') {
       const key = url.searchParams.get('key') || '';
-      if (!key.startsWith('parts/')) return json({ error: 'invalid key' }, 400);
+      if (!key.startsWith('parts/') && !key.startsWith('expenses/')) return json({ error: 'invalid key' }, 400);
       await env.IMAGES.delete(key);
       return json({ ok: true });
     }
@@ -194,11 +203,13 @@ export default {
         env.KV.get('biz_sequences',    'json'),
         env.KV.get('biz_lastModified'),
       ]);
+      // expenses: feature added after migration → no legacy key, default []
       const merged = {
         quotations:   quotations || [],
         invoices:     invoices   || [],
         repairs:      repairs    || [],
         parts:        parts      || [],
+        expenses:     [],
         settings:     settings   || {},
         sequences:    sequences  || {},
         lastModified: lastModified ? Number(lastModified) : Date.now(),
@@ -225,6 +236,7 @@ export default {
         invoices:     all.invoices   || [],
         repairs:      all.repairs    || [],
         parts:        all.parts      || [],
+        expenses:     all.expenses   || [],
         settings:     all.settings   || {},
         sequences:    all.sequences  || {},
         lastModified: all.lastModified ? Number(all.lastModified) : 0,
@@ -254,6 +266,7 @@ export default {
               invoices:   current.invoices   || [],
               repairs:    current.repairs    || [],
               parts:      current.parts      || [],
+              expenses:   current.expenses   || [],
               settings:   current.settings   || {},
               sequences:  current.sequences  || {},
             },
@@ -268,6 +281,7 @@ export default {
         invoices:     body.invoices   !== undefined ? body.invoices   : (current.invoices   || []),
         repairs:      body.repairs    !== undefined ? body.repairs    : (current.repairs    || []),
         parts:        body.parts      !== undefined ? body.parts      : (current.parts      || []),
+        expenses:     body.expenses   !== undefined ? body.expenses   : (current.expenses   || []),
         settings:     body.settings   !== undefined ? body.settings   : (current.settings   || {}),
         sequences:    body.sequences  !== undefined ? body.sequences  : (current.sequences  || {}),
         lastModified: newLastModified,
@@ -302,6 +316,7 @@ async function readBizAll(env) {
     invoices:     invoices   || [],
     repairs:      repairs    || [],
     parts:        parts      || [],
+    expenses:     [], // no legacy key — expenses added post-migration
     settings:     settings   || {},
     sequences:    sequences  || {},
     lastModified: lastModified ? Number(lastModified) : 0,
@@ -513,4 +528,102 @@ async function pushHist(env, userId, role, content) {
 
 function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ===================== Facebook Messenger AI chatbot =====================
+
+// ตรวจ signature ของ Facebook (HMAC-SHA256 ของ raw body ด้วย App Secret → "sha256=<hex>")
+async function verifyFbSignature(body, signature, appSecret) {
+  if (!signature || !appSecret) return false;
+  const expectedPrefix = 'sha256=';
+  if (!signature.startsWith(expectedPrefix)) return false;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(appSecret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
+  const hex = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('');
+  return (expectedPrefix + hex) === signature;
+}
+
+// ส่งข้อความผ่าน Facebook Send API
+function fbSend(env, recipientId, text) {
+  return fetch(
+    `https://graph.facebook.com/v19.0/me/messages?access_token=${env.PAGE_ACCESS_TOKEN}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient: { id: recipientId }, message: { text: String(text).slice(0, 1900) } }),
+    }
+  );
+}
+
+// ดึงชื่อลูกค้า Facebook
+async function fbProfile(env, senderId) {
+  try {
+    const r = await fetch(
+      `https://graph.facebook.com/${senderId}?fields=name&access_token=${env.PAGE_ACCESS_TOKEN}`
+    );
+    if (r.ok) { const d = await r.json(); if (d.name) return d.name; }
+  } catch (_) {}
+  return senderId.slice(-6);
+}
+
+// เก็บประวัติบทสนทนา FB สำหรับ context multi-turn
+async function pushFbHist(env, senderId, role, content) {
+  const key = `fb_hist_${senderId}`;
+  const hist = (await env.KV.get(key, 'json')) || [];
+  hist.push({ role, content });
+  if (hist.length > LINE_HIST_MAX) hist.splice(0, hist.length - LINE_HIST_MAX);
+  await env.KV.put(key, JSON.stringify(hist), { expirationTtl: 7 * 24 * 60 * 60 });
+}
+
+// จัดการ message event เดียวจาก Facebook (mirror LINE logic)
+async function handleFbEvent(env, event) {
+  const senderId = event.sender && event.sender.id;
+  if (!senderId) return;
+  const isText = typeof event.message.text === 'string' && event.message.text.trim() !== '';
+  const text = isText ? event.message.text : '[สื่อ/ไฟล์แนบ]';
+
+  // เก็บลง inbox เสมอ (manual inbox ยังใช้ได้)
+  await saveMessage(env, { senderId, text, timestamp: event.timestamp || Date.now(), from: 'customer' });
+
+  // โหมด human handoff → บอตเงียบ ส่งต่อแอดมินอย่างเดียว
+  const handoff = await env.KV.get(`fb_human_${senderId}`);
+  if (handoff) {
+    const name = await fbProfile(env, senderId);
+    await sendTelegram(env, `💬 <b>${escapeHtml(name)}</b> (FB): ${escapeHtml(text)}`);
+    return;
+  }
+
+  // ไม่ใช่ text (รูป/ไฟล์) → ขอรุ่น+อาการ
+  if (!isText) {
+    await fbSend(env, senderId,
+      'รับข้อมูลแล้วครับ รบกวนพิมพ์รุ่นเครื่อง (ป้ายใต้เครื่อง) + อาการ มาด้วยนะครับ จะได้ประเมินให้ตรง');
+    await pushFbHist(env, senderId, 'user', '[ลูกค้าส่งรูป/ไฟล์]');
+    return;
+  }
+
+  const kb = await env.KV.get('kb_chatbot');
+  if (!kb) { await fbSend(env, senderId, 'ขอโทษครับ ระบบกำลังปรับปรุง รบกวนทักใหม่ภายหลังครับ'); return; }
+
+  const history = (await env.KV.get(`fb_hist_${senderId}`, 'json')) || [];
+  const out = await callClaude(env, kb, history, text);
+
+  await fbSend(env, senderId, out.reply);
+  await saveMessage(env, { senderId, text: out.reply, timestamp: Date.now(), from: 'shop' });
+  await pushFbHist(env, senderId, 'user', text);
+  await pushFbHist(env, senderId, 'assistant', out.reply);
+
+  if (out.escalate) {
+    await env.KV.put(`fb_human_${senderId}`, '1', { expirationTtl: HUMAN_HANDOFF_TTL });
+    const name = await fbProfile(env, senderId);
+    await sendTelegram(env,
+      `🔔 <b>FB ต้องแอดมินดู</b>\n` +
+      `👤 ${escapeHtml(name)}\n` +
+      `💬 ลูกค้า: ${escapeHtml(text)}\n` +
+      `📌 เหตุผล: ${escapeHtml(out.reason || '-')}\n` +
+      `🤖 บอตตอบ: ${escapeHtml(out.reply)}\n\n` +
+      `บอตจะเงียบ 6 ชม. ให้ต้นเข้าไปคุยใน FB inbox ได้เลย`);
+  }
 }

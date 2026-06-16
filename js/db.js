@@ -4,7 +4,7 @@ const DEFAULT_WORKER_URL = 'https://kitchenaid-messenger.dr-kicthenaid.workers.d
 const DEFAULT_API_KEY    = 'ka-secret-999';
 
 const DB = {
-  _store: { quotations: [], invoices: [], repairs: [], parts: [], settings: {}, sequences: {} },
+  _store: { quotations: [], invoices: [], repairs: [], parts: [], expenses: [], settings: {}, sequences: {} },
   _syncTimer: null,
   _initialized: false,
   _loadedFromKV: false,
@@ -35,6 +35,7 @@ const DB = {
       invoices:   JSON.parse(localStorage.getItem('ka_invoices')   || '[]'),
       repairs:    JSON.parse(localStorage.getItem('ka_repairs')    || '[]'),
       parts:      JSON.parse(localStorage.getItem('ka_parts')      || '[]'),
+      expenses:   JSON.parse(localStorage.getItem('ka_expenses')   || '[]'),
       settings:   JSON.parse(localStorage.getItem('ka_settings')  || '{}'),
       sequences:  {},
     };
@@ -57,6 +58,7 @@ const DB = {
           invoices:   data.invoices   || [],
           repairs:    data.repairs    || [],
           parts:      data.parts      || [],
+          expenses:   data.expenses   || [],
           settings:   data.settings   || {},
           sequences:  data.sequences  || {},
         };
@@ -184,6 +186,7 @@ const DB = {
           invoices:   conflict.currentData.invoices   || [],
           repairs:    conflict.currentData.repairs    || [],
           parts:      conflict.currentData.parts      || [],
+          expenses:   conflict.currentData.expenses   || [],
           settings:   conflict.currentData.settings   || {},
           sequences:  conflict.currentData.sequences  || {},
         };
@@ -224,6 +227,25 @@ const DB = {
   },
   deletePart(id) {
     this._store.parts = this.getParts().filter(p => p.id !== id);
+    this._scheduleSync();
+  },
+
+  // ---- Expenses (รายจ่าย) ----
+  getExpenses() { return this._store.expenses || []; },
+  addExpense(e) {
+    e.id = e.id || this.uid(); e.createdAt = new Date().toISOString();
+    this._store.expenses = [...this.getExpenses(), e];
+    this._scheduleSync(); return e;
+  },
+  updateExpense(id, data) {
+    const list = this.getExpenses();
+    const i = list.findIndex(x => x.id === id);
+    if (i < 0) return null;
+    list[i] = { ...list[i], ...data, updatedAt: new Date().toISOString() };
+    this._store.expenses = list; this._scheduleSync(); return list[i];
+  },
+  deleteExpense(id) {
+    this._store.expenses = this.getExpenses().filter(e => e.id !== id);
     this._scheduleSync();
   },
 
