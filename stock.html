@@ -290,6 +290,7 @@
     <div class="stat-card">
       <div class="stat-lbl">มูลค่าสต็อก (ทุน)</div>
       <div class="stat-val mt-1" id="s-value" style="font-size:1.3rem">฿0</div>
+      <div class="stat-lbl mt-1" id="s-value-all" style="font-weight:400;font-size:.75rem;opacity:.7">รวมสินค้าสั่งตามออเดอร์ ฿0</div>
     </div>
     <div class="stat-card">
       <div class="stat-lbl">ใกล้หมด / หมด</div>
@@ -392,6 +393,10 @@
           <input id="p-unit" class="form-input" placeholder="ชิ้น" value="ชิ้น">
         </div>
       </div>
+      <label class="flex items-center gap-2 mb-2 cursor-pointer text-sm" style="user-select:none">
+        <input id="p-ondemand" type="checkbox" onchange="toggleOnDemand()" style="width:16px;height:16px;cursor:pointer">
+        <span>สั่งตามออเดอร์ (ไม่ติดตามสต็อก / ไม่นับมูลค่าสต็อก)</span>
+      </label>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="form-label">จำนวนคงเหลือ</label>
@@ -538,8 +543,12 @@ function renderStock(){
   // stats
   const allParts=DB.getParts();
   document.getElementById('s-total').textContent=allParts.length;
-  const val=allParts.reduce((s,p)=>(p.costPrice||0)*(p.stock||0)+s,0);
-  document.getElementById('s-value').textContent='฿'+fmt(val);
+  // มูลค่าสต็อกจริง = นับเฉพาะของที่ถือในมือ (stock < 999 = sentinel ของสั่งตามออเดอร์/บริการ ไม่นับ)
+  const ON_DEMAND_QTY=999;
+  const valReal=allParts.reduce((s,p)=>((p.stock||0)>=ON_DEMAND_QTY?0:(p.costPrice||0)*(p.stock||0))+s,0);
+  const valAll =allParts.reduce((s,p)=>(p.costPrice||0)*(p.stock||0)+s,0);
+  document.getElementById('s-value').textContent='฿'+fmt(valReal);
+  document.getElementById('s-value-all').textContent='รวมสินค้าสั่งตามออเดอร์ ฿'+fmt(valAll);
   document.getElementById('s-low').textContent=allParts.filter(p=>(p.stock||0)<=(p.minStock||0)).length;
 
   const tbody=document.getElementById('stock-tbody');
@@ -596,6 +605,8 @@ function openPartModal(id=null){
     document.getElementById('p-unit').value=p.unit||'ชิ้น';
     document.getElementById('p-stock').value=p.stock||0;
     document.getElementById('p-minstock').value=p.minStock||0;
+    document.getElementById('p-ondemand').checked=(p.stock||0)>=ON_DEMAND_QTY;
+    toggleOnDemand();
     if(p.imageUrl){
       document.getElementById('p-image-img').src=p.imageUrl;
       document.getElementById('p-image-preview').style.display='';
@@ -607,6 +618,8 @@ function openPartModal(id=null){
     document.getElementById('p-unit').value='ชิ้น';
     document.getElementById('p-stock').value=0;
     document.getElementById('p-minstock').value=0;
+    document.getElementById('p-ondemand').checked=false;
+    toggleOnDemand();
     document.getElementById('p-image-preview').style.display='none';
   }
   // fill datalist
@@ -617,6 +630,22 @@ function openPartModal(id=null){
 }
 
 function closePartModal(){ document.getElementById('part-modal').style.display='none'; editPartId=null; }
+
+const ON_DEMAND_QTY=999;
+function toggleOnDemand(){
+  const on=document.getElementById('p-ondemand').checked;
+  const stock=document.getElementById('p-stock');
+  const minstock=document.getElementById('p-minstock');
+  if(on){
+    stock.value=ON_DEMAND_QTY; minstock.value=0;
+    stock.disabled=true; minstock.disabled=true;
+    stock.style.opacity=minstock.style.opacity='.5';
+  } else {
+    stock.disabled=false; minstock.disabled=false;
+    stock.style.opacity=minstock.style.opacity='';
+    if(parseInt(stock.value)===ON_DEMAND_QTY) stock.value=0;
+  }
+}
 
 async function savePart(){
   const name=document.getElementById('p-name').value.trim();
