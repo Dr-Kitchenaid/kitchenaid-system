@@ -86,6 +86,12 @@ nav .hover\:bg-red-600:hover { background: var(--wood-dark) !important; }
   transition: all 0.2s;
   display: inline-block;
   font-weight: 500;
+  white-space: nowrap;
+}
+/* จอกลาง: ย่อเมนูให้ 9 อันพอดี ไม่ล้นจนดันหน้าเพี้ยน */
+@media (min-width:1024px) and (max-width:1300px) {
+  .nav-link { padding: 6px 8px; font-size: 0.78rem; }
+  .nav-link .ic { margin-right: 2px; }
 }
 .nav-link:hover, .nav-link.active {
   background: var(--cream);
@@ -204,8 +210,10 @@ textarea.form-input { resize:vertical; }
 /* ============================================
    Tables
    ============================================ */
-.tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-.data-table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+.tbl-wrap { overflow:auto; -webkit-overflow-scrolling:touch; max-width:100%; max-height:calc(100vh - 230px); }
+/* หัวตารางติดบนเวลาเลื่อน + scrollbar แนวนอนเห็นตลอดในกล่อง */
+.data-table thead th { position:sticky; top:0; z-index:2; }
+.data-table { width:100%; border-collapse:collapse; font-size:0.875rem; min-width:720px; }
 .data-table th {
   background:var(--cream-light);
   padding:11px 14px;
@@ -221,7 +229,11 @@ textarea.form-input { resize:vertical; }
   padding:11px 14px;
   border-bottom:1px solid var(--line-soft);
   color:var(--ink);
+  white-space:nowrap;
 }
+/* คอลัมน์จัดการ: ปุ่มอยู่บรรทัดเดียวเสมอ ไม่ห่อซ้อนกัน */
+.data-table td .flex.flex-wrap,
+.data-table td .gap-1.flex-wrap { flex-wrap:nowrap !important; }
 .data-table tbody tr:hover { background:var(--cream-light); }
 .data-table tbody tr:last-child td { border-bottom:none; }
 
