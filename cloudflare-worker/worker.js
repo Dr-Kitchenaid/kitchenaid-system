@@ -171,14 +171,6 @@ export default {
       return json({ ok: true });
     }
 
-    // POST /stock  { parts: [...] }  — browser syncs stock snapshot to KV
-    if (request.method === 'POST' && url.pathname === '/stock') {
-      const { parts } = await request.json().catch(() => ({}));
-      if (!Array.isArray(parts)) return json({ error: 'parts must be array' }, 400);
-      await env.KV.put('stock_parts', JSON.stringify(parts));
-      return json({ ok: true });
-    }
-
     // GET /stock/low — parts at/below their reorder point (minStock).
     // Source of truth = biz_all.parts (same data the web dashboard uses), NOT the
     // legacy `stock_parts` snapshot which goes stale. On-demand items (stock >= 999
@@ -193,45 +185,6 @@ export default {
         return s <= m;
       });
       return json(low);
-    }
-
-    // POST /migrate — ONE-TIME migration: combine 7 legacy keys → single `biz_all` key.
-    // Reads the 7 original keys, writes them into `biz_all`. Does NOT delete the old
-    // keys (kept as backup until verified). Safe to run multiple times (idempotent).
-    // Run:  curl -X POST -H "X-API-Key: <API_KEY>" https://<worker>/migrate
-    if (request.method === 'POST' && url.pathname === '/migrate') {
-      const [quotations, invoices, repairs, parts, settings, sequences, lastModified] = await Promise.all([
-        env.KV.get('biz_quotations',   'json'),
-        env.KV.get('biz_invoices',     'json'),
-        env.KV.get('biz_repairs',      'json'),
-        env.KV.get('biz_parts',        'json'),
-        env.KV.get('biz_settings',     'json'),
-        env.KV.get('biz_sequences',    'json'),
-        env.KV.get('biz_lastModified'),
-      ]);
-      // expenses: feature added after migration → no legacy key, default []
-      const merged = {
-        quotations:   quotations || [],
-        invoices:     invoices   || [],
-        repairs:      repairs    || [],
-        parts:        parts      || [],
-        expenses:     [],
-        settings:     settings   || {},
-        sequences:    sequences  || {},
-        lastModified: lastModified ? Number(lastModified) : Date.now(),
-      };
-      await env.KV.put('biz_all', JSON.stringify(merged));
-      return json({
-        ok: true,
-        migrated: true,
-        counts: {
-          quotations: merged.quotations.length,
-          invoices:   merged.invoices.length,
-          repairs:    merged.repairs.length,
-          parts:      merged.parts.length,
-        },
-        lastModified: merged.lastModified,
-      });
     }
 
     // GET /export — all business data
@@ -300,32 +253,15 @@ export default {
   },
 };
 
-// Read combined business data.
-// Prefers the single `biz_all` key; falls back to the 7 legacy keys if `biz_all`
-// does not exist yet (pre-migration), so no data is lost during rollout.
+// Read combined business data from the single `biz_all` key (sole source of truth).
+// The 7 legacy keys were deleted 2026-06-18 after migration was verified.
 async function readBizAll(env) {
   const all = await env.KV.get('biz_all', 'json');
   if (all) return all;
-
-  // Legacy fallback — read the 7 original keys.
-  const [quotations, invoices, repairs, parts, settings, sequences, lastModified] = await Promise.all([
-    env.KV.get('biz_quotations',   'json'),
-    env.KV.get('biz_invoices',     'json'),
-    env.KV.get('biz_repairs',      'json'),
-    env.KV.get('biz_parts',        'json'),
-    env.KV.get('biz_settings',     'json'),
-    env.KV.get('biz_sequences',    'json'),
-    env.KV.get('biz_lastModified'),
-  ]);
+  // biz_all missing (should never happen) → return empty shell so callers don't crash.
   return {
-    quotations:   quotations || [],
-    invoices:     invoices   || [],
-    repairs:      repairs    || [],
-    parts:        parts      || [],
-    expenses:     [], // no legacy key — expenses added post-migration
-    settings:     settings   || {},
-    sequences:    sequences  || {},
-    lastModified: lastModified ? Number(lastModified) : 0,
+    quotations: [], invoices: [], repairs: [], parts: [],
+    expenses: [], settings: {}, sequences: {}, lastModified: 0,
   };
 }
 
