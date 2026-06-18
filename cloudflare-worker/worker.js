@@ -179,12 +179,18 @@ export default {
       return json({ ok: true });
     }
 
-    // GET /stock/low — items that are out of stock (always) OR at/below minStock (if minStock > 0)
+    // GET /stock/low — parts at/below their reorder point (minStock).
+    // Source of truth = biz_all.parts (same data the web dashboard uses), NOT the
+    // legacy `stock_parts` snapshot which goes stale. On-demand items (stock >= 999
+    // sentinel = สั่งตามออเดอร์/ไม่สต็อก) are excluded so they don't false-alarm.
     if (request.method === 'GET' && url.pathname === '/stock/low') {
-      const parts = await env.KV.get('stock_parts', 'json') || [];
+      const ON_DEMAND_QTY = 999;
+      const all = await readBizAll(env);
+      const parts = all.parts || [];
       const low = parts.filter(p => {
         const s = p.stock || 0, m = p.minStock || 0;
-        return s === 0 || (m > 0 && s <= m);
+        if (s >= ON_DEMAND_QTY) return false; // ของสั่งตามออเดอร์ ไม่ต้องเตือน
+        return s <= m;
       });
       return json(low);
     }
