@@ -774,7 +774,7 @@ function saveDoc(statusOverride){
     vatRate:tot.vatRate,
     vatAmount:tot.vatAmt,
     total:tot.total,
-    shopSnapshot: DB.getSettings(),
+    shopSnapshot: (() => { const { shopLogo, ...s } = DB.getSettings() || {}; return s; })(), // ตัด shopLogo base64 ออก — quote-view ไม่ได้ใช้ และทำให้ payload บวม
   };
   if(editingId){
     DB.updateQuotation(editingId,data);
