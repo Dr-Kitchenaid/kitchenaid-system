@@ -753,11 +753,44 @@ function showForm(id=null){
 
 // ---- Items ----
 function itemAmt(it){ return (it.qty||0)*(it.price||0)*(1-(it.discPct||0)/100); }
+
+// ---- Stock deduction ----
+// คืน map {partId: qtyรวม} จากรายการในบิล (เฉพาะ type='part' ที่ match อะไหล่ได้)
+function resolveStockMoves(items){
+  const parts=DB.getParts();
+  const map={};
+  (items||[]).forEach(it=>{
+    if((it.type||'part')!=='part') return;
+    let p=null;
+    if(it.partId) p=parts.find(x=>x.id===it.partId);
+    if(!p && it.code) p=parts.find(x=>x.code===it.code);
+    if(!p) return;
+    map[p.id]=(map[p.id]||0)+(+it.qty||0);
+  });
+  return map;
+}
+// ปรับสต๊อกตามส่วนต่าง newMap-oldMap (oldMap = ที่บิลนี้ตัดไปแล้ว) คืน array คำเตือนถ้าติดลบ
+function applyStockDelta(newMap, oldMap){
+  oldMap=oldMap||{}; newMap=newMap||{};
+  const warn=[];
+  const ids=new Set([...Object.keys(newMap),...Object.keys(oldMap)]);
+  ids.forEach(id=>{
+    const delta=(newMap[id]||0)-(oldMap[id]||0);
+    if(!delta) return;
+    const p=DB.getParts().find(x=>x.id===id);
+    if(!p) return;
+    const next=(+p.stock||0)-delta;
+    if(next<0) warn.push(`${p.name||p.code}: เหลือ ${(+p.stock||0)} แต่ตัด ${delta} → ติดลบ`);
+    DB.updatePart(id,{stock:next});
+  });
+  return warn;
+}
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function addItem(part=null){
   currentItems.push({
     id:Math.random().toString(36).slice(2),
+    partId:part?part.id:null,
     description:part?part.name:'',
     code:part?part.code:'',
     type:part?'part':'labor',
@@ -870,13 +903,21 @@ function saveDoc(){
     data.paidAt=document.getElementById('f-paid-at').value;
     data.paymentMethod=document.getElementById('f-pay-method').value;
   }
+  // ตัดสต๊อก: เทียบกับที่บิลนี้เคยตัด (กันตัดซ้ำตอน edit)
+  const newMap=resolveStockMoves(data.items);
+  const oldMap=editingId ? (DB.getInvoiceById(editingId)?.stockMoves||{}) : {};
+  const warns=applyStockDelta(newMap,oldMap);
+  data.stockMoves=newMap;
   if(editingId){ DB.updateInvoice(editingId,data); }
   else { data.number=DB.nextNum('IV'); editingId=DB.addInvoice(data).id; }
+  if(warns.length) alert('⚠️ สต๊อกไม่พอ (บันทึกบิลแล้ว แต่สต๊อกติดลบ):\n\n'+warns.join('\n'));
   showList();
 }
 
 function deleteDoc(id){
   if(!confirm('ยืนยันการลบบิลนี้?'))return;
+  const inv=DB.getInvoiceById(id);
+  if(inv?.stockMoves) applyStockDelta({}, inv.stockMoves); // คืนสต๊อก
   DB.deleteInvoice(id); renderList();
 }
 
