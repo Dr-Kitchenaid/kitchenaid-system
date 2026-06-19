@@ -985,7 +985,7 @@ function buildPrintHtml(r) {
           <div style="font-size:11pt;font-weight:600">${r.customerName||'-'}</div>
           ${r.customerCompany?`<div style="font-size:10pt;color:#555;margin-top:3px">🏢 ${r.customerCompany}</div>`:''}
           ${r.customerTaxId?`<div style="font-size:9.5pt;color:#555;margin-top:2px">เลขผู้เสียภาษี: ${r.customerTaxId}</div>`:''}
-          ${r.customerPhone?`<div style="font-size:10pt;color:#555;margin-top:3px"><svg class="ic"><use href="#i-phone"/></svg> ${r.customerPhone}</div>`:''}
+          ${r.customerPhone?`<div style="font-size:10pt;color:#555;margin-top:3px">📞 ${r.customerPhone}</div>`:''}
           ${r.customerEmail?`<div style="font-size:10pt;color:#555">✉️ ${r.customerEmail}</div>`:''}
           ${r.customerAddress?`<div style="font-size:9.5pt;color:#555;margin-top:3px;white-space:pre-line">${r.customerAddress}</div>`:''}
         </div>
