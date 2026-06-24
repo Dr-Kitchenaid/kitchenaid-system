@@ -4,7 +4,7 @@ const DEFAULT_WORKER_URL = 'https://kitchenaid-messenger.dr-kicthenaid.workers.d
 const DEFAULT_API_KEY    = 'ka-secret-999';
 
 const DB = {
-  _store: { quotations: [], invoices: [], repairs: [], parts: [], expenses: [], settings: {}, sequences: {} },
+  _store: { quotations: [], invoices: [], repairs: [], parts: [], expenses: [], attachments: [], settings: {}, sequences: {} },
   _syncTimer: null,
   _initialized: false,
   _loadedFromKV: false,
@@ -36,6 +36,7 @@ const DB = {
       repairs:    JSON.parse(localStorage.getItem('ka_repairs')    || '[]'),
       parts:      JSON.parse(localStorage.getItem('ka_parts')      || '[]'),
       expenses:   JSON.parse(localStorage.getItem('ka_expenses')   || '[]'),
+      attachments:JSON.parse(localStorage.getItem('ka_attachments')|| '[]'),
       settings:   JSON.parse(localStorage.getItem('ka_settings')  || '{}'),
       sequences:  {},
     };
@@ -59,6 +60,7 @@ const DB = {
           repairs:    data.repairs    || [],
           parts:      data.parts      || [],
           expenses:   data.expenses   || [],
+          attachments:data.attachments || [],
           settings:   data.settings   || {},
           sequences:  data.sequences  || {},
         };
@@ -187,6 +189,7 @@ const DB = {
           repairs:    conflict.currentData.repairs    || [],
           parts:      conflict.currentData.parts      || [],
           expenses:   conflict.currentData.expenses   || [],
+          attachments:conflict.currentData.attachments || [],
           settings:   conflict.currentData.settings   || {},
           sequences:  conflict.currentData.sequences  || {},
         };
@@ -247,6 +250,52 @@ const DB = {
   deleteExpense(id) {
     this._store.expenses = this.getExpenses().filter(e => e.id !== id);
     this._scheduleSync();
+  },
+
+  // ---- Attachments (ไฟล์แนบลูกค้า เช่น 50ทวิ/หนังสือรับรองหักภาษี ณ ที่จ่าย) ----
+  // ไฟล์จริงเก็บใน R2 (ผ่าน uploadFile); ที่นี่เก็บแค่ metadata + url (ห้ามฝัง base64).
+  getAttachments() { return this._store.attachments || []; },
+  addAttachment(a) {
+    a.id = a.id || this.uid(); a.createdAt = new Date().toISOString();
+    this._store.attachments = [...this.getAttachments(), a];
+    this._scheduleSync(); return a;
+  },
+  deleteAttachment(id) {
+    this._store.attachments = this.getAttachments().filter(a => a.id !== id);
+    this._scheduleSync();
+  },
+
+  // อัปโหลดไฟล์ขึ้น R2 ผ่าน worker /image → คืน { ok, key, url }
+  // dir: 'wht' (50ทวิ) | 'parts' | 'expenses'.  file = File/Blob.
+  async uploadFile(dir, id, file) {
+    const url = this._workerUrl();
+    if (!url) return { ok: false, error: 'no worker url' };
+    const ext = (file.name || '').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const ep = `${url}/image?dir=${encodeURIComponent(dir)}&id=${encodeURIComponent(id)}&ext=${encodeURIComponent(ext)}`;
+    try {
+      const r = await fetch(ep, {
+        method: 'POST',
+        headers: { 'X-API-Key': this._apiKey(), 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return { ok: false, error: d.error || ('HTTP ' + r.status) };
+      return d; // { ok, key, url }
+    } catch (e) {
+      return { ok: false, error: String(e && e.message || e) };
+    }
+  },
+
+  // ลบไฟล์ออกจาก R2 (best-effort) ตาม key
+  async deleteFile(key) {
+    const url = this._workerUrl();
+    if (!url || !key) return;
+    try {
+      await fetch(`${url}/image?key=${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+        headers: { 'X-API-Key': this._apiKey() },
+      });
+    } catch (_) {}
   },
 
   // ---- Quotations ----

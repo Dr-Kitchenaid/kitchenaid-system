@@ -141,9 +141,10 @@ export default {
     }
 
     // POST /image?dir=expenses&id=xxx&ext=jpg  body=binary  → upload to R2, return {key, url}
-    // dir whitelist: parts | expenses. Backward-compat: if no `dir`, accept legacy `partId` (= dir parts).
+    // dir whitelist: parts | expenses | wht (50ทวิ / withholding tax docs — allows PDF, larger limit).
+    // Backward-compat: if no `dir`, accept legacy `partId` (= dir parts).
     if (request.method === 'POST' && url.pathname === '/image') {
-      const IMG_DIRS = ['parts', 'expenses'];
+      const IMG_DIRS = ['parts', 'expenses', 'wht'];
       let dir = (url.searchParams.get('dir') || '').toLowerCase();
       let id  = (url.searchParams.get('id') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
       if (!dir) { // legacy: ?partId=xxx (stock.html before generalize)
@@ -155,7 +156,9 @@ export default {
       const ext = (url.searchParams.get('ext') || 'jpg').replace(/[^a-z0-9]/gi, '').slice(0, 5) || 'jpg';
       const buf = await request.arrayBuffer();
       if (buf.byteLength === 0) return json({ error: 'empty body' }, 400);
-      if (buf.byteLength > 2 * 1024 * 1024) return json({ error: 'too large (max 2MB)' }, 400);
+      // wht docs (PDF/photo of 50ทวิ) get a larger cap than product/expense thumbnails.
+      const maxBytes = dir === 'wht' ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
+      if (buf.byteLength > maxBytes) return json({ error: `too large (max ${maxBytes / 1024 / 1024}MB)` }, 400);
       const uuid = crypto.randomUUID();
       const key = `${dir}/${id}/${uuid}.${ext}`;
       const contentType = request.headers.get('Content-Type') || 'image/jpeg';
@@ -163,10 +166,12 @@ export default {
       return json({ ok: true, key, url: `${env.R2_PUBLIC_URL}/${key}` });
     }
 
-    // DELETE /image?key=parts/xxx/yyy.jpg  (whitelist prefix: parts/ | expenses/)
+    // DELETE /image?key=parts/xxx/yyy.jpg  (whitelist prefix: parts/ | expenses/ | wht/)
     if (request.method === 'DELETE' && url.pathname === '/image') {
       const key = url.searchParams.get('key') || '';
-      if (!key.startsWith('parts/') && !key.startsWith('expenses/')) return json({ error: 'invalid key' }, 400);
+      if (!key.startsWith('parts/') && !key.startsWith('expenses/') && !key.startsWith('wht/')) {
+        return json({ error: 'invalid key' }, 400);
+      }
       await env.IMAGES.delete(key);
       return json({ ok: true });
     }
@@ -196,6 +201,7 @@ export default {
         repairs:      all.repairs    || [],
         parts:        all.parts      || [],
         expenses:     all.expenses   || [],
+        attachments:  all.attachments || [],
         settings:     all.settings   || {},
         sequences:    all.sequences  || {},
         lastModified: all.lastModified ? Number(all.lastModified) : 0,
@@ -226,6 +232,7 @@ export default {
               repairs:    current.repairs    || [],
               parts:      current.parts      || [],
               expenses:   current.expenses   || [],
+              attachments: current.attachments || [],
               settings:   current.settings   || {},
               sequences:  current.sequences  || {},
             },
@@ -241,6 +248,7 @@ export default {
         repairs:      body.repairs    !== undefined ? body.repairs    : (current.repairs    || []),
         parts:        body.parts      !== undefined ? body.parts      : (current.parts      || []),
         expenses:     body.expenses   !== undefined ? body.expenses   : (current.expenses   || []),
+        attachments:  body.attachments !== undefined ? body.attachments : (current.attachments || []),
         settings:     body.settings   !== undefined ? body.settings   : (current.settings   || {}),
         sequences:    body.sequences  !== undefined ? body.sequences  : (current.sequences  || {}),
         lastModified: newLastModified,
@@ -261,7 +269,7 @@ async function readBizAll(env) {
   // biz_all missing (should never happen) → return empty shell so callers don't crash.
   return {
     quotations: [], invoices: [], repairs: [], parts: [],
-    expenses: [], settings: {}, sequences: {}, lastModified: 0,
+    expenses: [], attachments: [], settings: {}, sequences: {}, lastModified: 0,
   };
 }
 
